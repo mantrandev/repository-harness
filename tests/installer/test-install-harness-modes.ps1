@@ -39,6 +39,16 @@ try {
     if (!(Test-Path (Join-Path $Fresh "docs/WORKFLOW.md"))) { throw "core workflow missing" }
     if (!(Test-Path (Join-Path $Fresh "docs/patterns/encoding-invariants.md"))) { throw "invariant pattern missing" }
     if (!(Test-Path (Join-Path $Fresh ".agents/skills/encode-invariant/SKILL.md"))) { throw "encode-invariant skill missing" }
+    if (!(Test-Path (Join-Path $Fresh ".claude/skills/encode-invariant/SKILL.md"))) { throw "Claude encode-invariant discovery entry missing" }
+    $FreshClaude = Get-Content -Raw (Join-Path $Fresh "CLAUDE.md")
+    if (!$FreshClaude.Contains("@AGENTS.md")) { throw "Claude entrypoint does not import AGENTS.md" }
+    if (!$FreshClaude.Contains("<!-- HARNESS:BEGIN -->") -or !$FreshClaude.Contains("<!-- HARNESS:END -->")) { throw "Claude entrypoint block is not marked" }
+    foreach ($ClaudeSkill in @("encode-invariant", "onboard-repository", "improve-harness", "audit-onboarding-proposal")) {
+        $ShimPath = Join-Path $Fresh ".claude/skills/$ClaudeSkill/SKILL.md"
+        if (!(Test-Path $ShimPath)) { throw "Claude discovery entry missing: $ClaudeSkill" }
+        if (!(Get-Content -Raw $ShimPath).Contains(".agents/skills/$ClaudeSkill/SKILL.md")) { throw "Claude discovery entry does not point at canonical skill: $ClaudeSkill" }
+        if (!(Test-Path (Join-Path $Fresh ".harness-core/base/.claude/skills/$ClaudeSkill/SKILL.md"))) { throw "Claude discovery entry is not update-tracked: $ClaudeSkill" }
+    }
     $FreshAgents = Get-Content -Raw (Join-Path $Fresh "AGENTS.md")
     if (!$FreshAgents.Contains("docs/patterns/encoding-invariants.md")) { throw "invariant routing missing" }
     $FreshWorkflow = Get-Content -Raw (Join-Path $Fresh "docs/WORKFLOW.md")
@@ -74,11 +84,38 @@ try {
         if (Test-Path (Join-Path $Fresh $Legacy)) { throw "core install created legacy artifact $Legacy" }
     }
     if (Test-Path (Join-Path $Fresh ".agents/skills/engineering-wisdom")) { throw "core implicitly installed engineering wisdom" }
+    if (Test-Path (Join-Path $Fresh ".claude/skills/engineering-wisdom")) { throw "core implicitly installed Claude engineering wisdom" }
+
+    # -NoClaude leaves CLAUDE.md alone; core discovery entries still land.
+    $NoClaude = Join-Path $Temp "no-claude"
+    Invoke-Install $NoClaude @("NoClaude")
+    if (Test-Path (Join-Path $NoClaude "CLAUDE.md")) { throw "-NoClaude still wrote CLAUDE.md" }
+    if (!(Test-Path (Join-Path $NoClaude ".claude/skills/encode-invariant/SKILL.md"))) { throw "-NoClaude dropped core discovery entries" }
+
+    # A rerun creates the entrypoint, then leaves a current block byte-identical.
+    Invoke-Install $NoClaude @("Merge")
+    if (!(Test-Path (Join-Path $NoClaude "CLAUDE.md"))) { throw "rerun did not create CLAUDE.md" }
+    if (!(Test-Path (Join-Path $NoClaude "scripts/bin/harness.exe"))) { throw "reinstall lost the core binary during in-place swap" }
+    $ClaudeCurrentHash = (Get-FileHash -Algorithm SHA256 (Join-Path $NoClaude "CLAUDE.md")).Hash
+    Invoke-Install $NoClaude @("Merge")
+    if ((Get-FileHash -Algorithm SHA256 (Join-Path $NoClaude "CLAUDE.md")).Hash -ne $ClaudeCurrentHash) { throw "rerun rewrote a current Claude block" }
+    if (Get-ChildItem (Join-Path $NoClaude ".harness-backup") -Recurse -Filter "CLAUDE.md" -File -ErrorAction SilentlyContinue) { throw "rerun backed up an unchanged CLAUDE.md" }
+
+    # -Claude and -NoClaude cannot be combined.
+    $AcceptedBothClaude = $false
+    try {
+        & $Installer -Directory (Join-Path $Temp "claude-conflict") -Yes -Claude -NoClaude | Out-Null
+        $AcceptedBothClaude = $true
+    } catch {
+        if (!$_.Exception.Message.Contains("mutually exclusive")) { throw }
+    }
+    if ($AcceptedBothClaude) { throw "installer accepted both -Claude and -NoClaude" }
 
     # Engineering wisdom remains explicit-only.
     $Wisdom = Join-Path $Temp "wisdom"
     Invoke-Install $Wisdom @("WithEngineeringWisdom")
     if (!(Test-Path (Join-Path $Wisdom ".agents/skills/engineering-wisdom/SKILL.md"))) { throw "explicit engineering wisdom skill missing" }
+    if (!(Test-Path (Join-Path $Wisdom ".claude/skills/engineering-wisdom/SKILL.md"))) { throw "explicit Claude engineering wisdom entry missing" }
     $WisdomAgent = Get-Content -Raw (Join-Path $Wisdom ".agents/skills/engineering-wisdom/agents/openai.yaml")
     if (!$WisdomAgent.Contains("allow_implicit_invocation: false")) { throw "engineering wisdom is not explicit-only" }
 
@@ -92,6 +129,32 @@ try {
         Where-Object { $_.FullName -like "*engineering-wisdom*" } |
         Select-Object -First 1
     if (!$ForceBackup -or !(Get-Content -Raw $ForceBackup.FullName).Contains("consumer mutation")) { throw "force backup missing old advisory file" }
+
+    # The Claude entrypoint appends one canonical block, keeps local text, and
+    # backs up the exact prior file.
+    $Claude = Join-Path $Temp "claude"
+    New-Item -ItemType Directory -Force $Claude | Out-Null
+    "# Local Claude Rules`n`nKeep this Claude-only rule." | Set-Content (Join-Path $Claude "CLAUDE.md")
+    $ClaudeHash = (Get-FileHash -Algorithm SHA256 (Join-Path $Claude "CLAUDE.md")).Hash
+    Invoke-Install $Claude
+    $ClaudeText = Get-Content -Raw (Join-Path $Claude "CLAUDE.md")
+    if (!$ClaudeText.Contains("Keep this Claude-only rule.")) { throw "Claude entrypoint dropped local text" }
+    if (([regex]::Matches($ClaudeText, "@AGENTS.md")).Count -ne 1) { throw "Claude entrypoint does not import AGENTS.md exactly once" }
+    $ClaudeBackup = Get-ChildItem (Join-Path $Claude ".harness-backup") -Recurse -Filter "CLAUDE.md" -File | Select-Object -First 1
+    if (!$ClaudeBackup -or (Get-FileHash -Algorithm SHA256 $ClaudeBackup.FullName).Hash -ne $ClaudeHash) { throw "Claude backup does not match prior CLAUDE.md" }
+
+    # A malformed Claude marker pair fails closed.
+    $MalformedClaude = Join-Path $Temp "malformed-claude"
+    New-Item -ItemType Directory -Force $MalformedClaude | Out-Null
+    "custom`n<!-- HARNESS:BEGIN -->`nstale without end" | Set-Content (Join-Path $MalformedClaude "CLAUDE.md")
+    $AcceptedMalformedClaude = $false
+    try {
+        Invoke-Install $MalformedClaude
+        $AcceptedMalformedClaude = $true
+    } catch {
+        if (!$_.Exception.Message.Contains("exactly one complete Harness marker pair")) { throw }
+    }
+    if ($AcceptedMalformedClaude) { throw "installer accepted malformed Claude markers" }
 
     # Merge fills core gaps while retaining every legacy artifact unchanged.
     $Merge = Join-Path $Temp "merge"
@@ -222,7 +285,7 @@ try {
     }
     if ($AcceptedIdentity) { throw "installer unexpectedly accepted a mismatched core version" }
 
-    Write-Host "PowerShell core install, safety, shim, opt-in, and removed-parameter modes passed"
+    Write-Host "PowerShell core install, safety, shims, Claude entrypoint, opt-in, and removed-parameter modes passed"
 }
 finally {
     Remove-Item Env:HARNESS_CORE_BINARY -ErrorAction SilentlyContinue

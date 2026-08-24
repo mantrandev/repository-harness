@@ -55,6 +55,7 @@ def entries(path):
 core_expected = entries(core_manifest)
 runtime = {
     ".gitignore",
+    "CLAUDE.md",
     ".harness-core/.gitignore",
     ".harness-core/lock",
     ".harness-core/manifest.json",

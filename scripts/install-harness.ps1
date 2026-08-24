@@ -7,12 +7,20 @@ param(
     [switch]$Merge,
     [switch]$WithEngineeringWisdom,
     [switch]$RefreshAgentShim,
+    [switch]$Claude,
+    [switch]$NoClaude,
     [switch]$Override,
     [switch]$Force,
     [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($Claude -and $NoClaude) {
+    Write-Error "-Claude and -NoClaude are mutually exclusive"
+    exit 1
+}
+$script:InstallClaudeShim = !$NoClaude
 
 function Write-Step([string]$Message) {
     Write-Host $Message
@@ -206,6 +214,65 @@ function Refresh-AgentShimFile {
     $script:Updated++
 }
 
+function Get-ClaudeShimBlock {
+    return (Read-SourceText "scripts/claude-harness-block.md").TrimEnd("`r", "`n")
+}
+
+function Write-ClaudeShimFile {
+    if (!$script:InstallClaudeShim) {
+        return
+    }
+    $target = Join-Path $script:TargetDir "CLAUDE.md"
+    $block = Get-ClaudeShimBlock
+
+    if (!(Test-Path $target)) {
+        if ($DryRun) {
+            Write-Step "create   CLAUDE.md"
+        } else {
+            Set-Content -LiteralPath $target -Value ("# Project Rules`n`n" + $block + "`n") -NoNewline
+            Write-Step "created  CLAUDE.md"
+        }
+        $script:Created++
+        return
+    }
+
+    $content = Get-Content -LiteralPath $target -Raw
+    Assert-HarnessMarkers $content "CLAUDE.md"
+
+    $existing = [regex]::Match($content, "(?s)<!-- HARNESS:BEGIN -->.*?<!-- HARNESS:END -->")
+    if ($existing.Success -and $existing.Value.Replace("`r`n", "`n") -eq $block.Replace("`r`n", "`n")) {
+        Write-Step "skip     CLAUDE.md (Harness block current)"
+        $script:Skipped++
+        return
+    }
+
+    if ($DryRun) {
+        if ($existing.Success) {
+            Write-Step "update   CLAUDE.md (refresh marked Harness block, backup first)"
+        } else {
+            Write-Step "update   CLAUDE.md (append Harness block, backup first)"
+        }
+        $script:Updated++
+        return
+    }
+
+    New-Item -ItemType Directory -Force -Path $script:BackupDir | Out-Null
+    $backup = Join-Path $script:BackupDir "CLAUDE.md"
+    if (!(Test-Path $backup)) {
+        Copy-Item -LiteralPath $target -Destination $backup
+    }
+
+    if ($existing.Success) {
+        $content = [regex]::Replace($content, "(?s)<!-- HARNESS:BEGIN -->.*?<!-- HARNESS:END -->", [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $block })
+        Set-Content -LiteralPath $target -Value $content -NoNewline
+        Write-Step "updated  CLAUDE.md (refreshed Harness block; backup: $($backup.Substring($script:TargetDir.Length + 1)))"
+    } else {
+        Set-Content -LiteralPath $target -Value ($content.TrimEnd() + "`n`n" + $block + "`n") -NoNewline
+        Write-Step "updated  CLAUDE.md (appended Harness block; backup: $($backup.Substring($script:TargetDir.Length + 1)))"
+    }
+    $script:Updated++
+}
+
 function Get-HarnessReleaseTag {
     if ($env:HARNESS_CORE_RELEASE_TAG) { return $env:HARNESS_CORE_RELEASE_TAG.Trim() }
     if ($script:Source.Mode -eq "local") {
@@ -269,7 +336,7 @@ function Install-HarnessCore {
         } else {
             $releaseTag = if ($pendingVersion) { "harness-v$pendingVersion" } else { Get-HarnessReleaseTag }
             if ($releaseTag -notmatch '^harness-v[0-9]+\.[0-9]+\.[0-9]+(?:[-.][A-Za-z0-9]+)*$') { Fail "invalid Harness core release tag: $releaseTag" }
-            $baseUrl = if ($env:HARNESS_CORE_CLI_BASE_URL) { $env:HARNESS_CORE_CLI_BASE_URL.TrimEnd("/") } else { "https://github.com/hoangnb24/repository-harness/releases/download/$releaseTag" }
+            $baseUrl = if ($env:HARNESS_CORE_CLI_BASE_URL) { $env:HARNESS_CORE_CLI_BASE_URL.TrimEnd("/") } else { "https://github.com/mantrandev/repository-harness/releases/download/$releaseTag" }
             $binaryUrl = "$baseUrl/harness-windows-x64.exe"
             $checksumUrl = "$binaryUrl.sha256"
             $checksum = "$staged.sha256"
@@ -322,7 +389,7 @@ function Install-HarnessCore {
         }
         if ($commandStatus -eq 0 -and !$DryRun) {
             if (Test-Path $target) {
-                [System.IO.File]::Replace($targetTemp, $target, $null)
+                [System.IO.File]::Replace($targetTemp, $target, [NullString]::Value)
             } else {
                 Move-Item -LiteralPath $targetTemp -Destination $target
             }
@@ -350,8 +417,8 @@ $script:Created = 0
 $script:Updated = 0
 $script:Skipped = 0
 $script:Source = Get-SourceMode
-$script:SourceBaseUrl = if ($env:HARNESS_SOURCE_BASE_URL) { $env:HARNESS_SOURCE_BASE_URL.TrimEnd("/") } else { "https://raw.githubusercontent.com/hoangnb24/repository-harness/main" }
-$script:CoreSourceBaseUrl = if ($env:HARNESS_CORE_SOURCE_BASE_URL) { $env:HARNESS_CORE_SOURCE_BASE_URL.TrimEnd("/") } else { "https://raw.githubusercontent.com/hoangnb24/repository-harness/main" }
+$script:SourceBaseUrl = if ($env:HARNESS_SOURCE_BASE_URL) { $env:HARNESS_SOURCE_BASE_URL.TrimEnd("/") } else { "https://raw.githubusercontent.com/mantrandev/repository-harness/main" }
+$script:CoreSourceBaseUrl = if ($env:HARNESS_CORE_SOURCE_BASE_URL) { $env:HARNESS_CORE_SOURCE_BASE_URL.TrimEnd("/") } else { "https://raw.githubusercontent.com/mantrandev/repository-harness/main" }
 $script:PayloadManifest = "scripts/harness-install-files.txt"
 $script:EngineeringWisdomPayloadManifest = "scripts/engineering-wisdom-install-files.txt"
 $script:TargetDir = Resolve-TargetPath $Directory
@@ -418,12 +485,18 @@ if ($WithEngineeringWisdom) {
 } else {
     Write-Step "Engineering wisdom: excluded"
 }
+if ($script:InstallClaudeShim) {
+    Write-Step "Claude Code entrypoint: CLAUDE.md included"
+} else {
+    Write-Step "Claude Code entrypoint: CLAUDE.md excluded (-NoClaude)"
+}
 Write-Step "Target project: $script:TargetDir"
 
 Install-HarnessCore
 
 Install-EngineeringWisdom
 Refresh-AgentShimFile
+Write-ClaudeShimFile
 
 Write-Step ""
 Write-Step "Done. Created: $script:Created, updated: $script:Updated, skipped: $script:Skipped."

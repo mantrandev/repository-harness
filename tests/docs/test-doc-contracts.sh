@@ -39,6 +39,7 @@ current_files=(
   docs/decisions/0026-explicit-onboarding-skills-in-default-core.md
   docs/decisions/0027-end-protocol-v1-and-focus-repository-protocol.md
   docs/decisions/0028-authoritative-invariant-encoding.md
+  docs/decisions/0029-multi-agent-entrypoints-and-claude-default.md
   docs/research/application-legibility.md
   .github/ISSUE_TEMPLATE/real-world-example.md
 )
@@ -66,6 +67,9 @@ require docs/patterns/encoding-invariants.md '| Optional hook |'
 require docs/patterns/encoding-invariants.md '| CI |'
 require docs/patterns/encoding-invariants.md '| Branch protection |'
 require docs/decisions/0028-authoritative-invariant-encoding.md 'Matching requests may invoke it implicitly'
+require docs/decisions/0029-multi-agent-entrypoints-and-claude-default.md 'Claude Code only scans'
+require docs/product/installation-profiles.md '## Agent Entrypoints'
+require README.md '## Agent Entrypoints'
 require docs/ARCHITECTURE.md 'one Rust binary'
 require README.md '## What We Prove'
 require README.md '## Protocol V1 End Of Life'

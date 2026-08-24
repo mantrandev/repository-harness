@@ -20,7 +20,10 @@ default_target="$temp/default"
 install --directory "$default_target" --yes >"$temp/default.out"
 grep -Fq 'Engineering wisdom: excluded' "$temp/default.out"
 [[ ! -e "$default_target/.agents/skills/engineering-wisdom" ]]
+[[ ! -e "$default_target/.claude/skills/engineering-wisdom" ]]
 ! grep -Fq '.agents/skills/engineering-wisdom/' \
+  "$root/scripts/harness-install-files.txt"
+! grep -Fq '.claude/skills/engineering-wisdom/' \
   "$root/scripts/harness-install-files.txt"
 
 # Cause: explicit advisory flag. Effect: every optional-manifest member is
@@ -68,6 +71,7 @@ grep -Fq 'Engineering wisdom: excluded' "$temp/reinstall.out"
 
 # PowerShell exposes the same named selection and consumes the same manifest.
 grep -Fq '[switch]$WithEngineeringWisdom' "$root/scripts/install-harness.ps1"
+grep -Fq '[switch]$Claude' "$root/scripts/install-harness.ps1"
 grep -Fq \
   '$script:EngineeringWisdomPayloadManifest = "scripts/engineering-wisdom-install-files.txt"' \
   "$root/scripts/install-harness.ps1"

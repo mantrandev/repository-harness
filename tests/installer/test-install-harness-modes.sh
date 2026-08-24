@@ -43,6 +43,14 @@ grep -Fq 'Harness profile: core' "$temp/fresh.out"
 [[ -f "$fresh/docs/WORKFLOW.md" ]]
 [[ -f "$fresh/docs/patterns/encoding-invariants.md" ]]
 [[ -f "$fresh/.agents/skills/encode-invariant/SKILL.md" ]]
+[[ -f "$fresh/.claude/skills/encode-invariant/SKILL.md" ]]
+grep -Fq 'Claude Code entrypoint: CLAUDE.md included' "$temp/fresh.out"
+cmp -s <(extract_block "$fresh/CLAUDE.md") "$root/scripts/claude-harness-block.md"
+[[ "$(grep -Fc '@AGENTS.md' "$fresh/CLAUDE.md")" == 1 ]]
+for name in encode-invariant onboard-repository improve-harness audit-onboarding-proposal; do
+  grep -Fq ".agents/skills/$name/SKILL.md" "$fresh/.claude/skills/$name/SKILL.md"
+  [[ -f "$fresh/.harness-core/base/.claude/skills/$name/SKILL.md" ]]
+done
 cmp -s <(extract_block "$fresh/AGENTS.md") "$root/scripts/agent-harness-block.md"
 grep -Fq 'docs/patterns/encoding-invariants.md' "$fresh/AGENTS.md"
 grep -Fq 'Does The Work Encode An Invariant?' "$fresh/docs/WORKFLOW.md"
@@ -79,12 +87,29 @@ for legacy in \
 done
 ! grep -Fxq 'harness.db' "$fresh/.gitignore"
 [[ ! -e "$fresh/.agents/skills/engineering-wisdom" ]]
+[[ ! -e "$fresh/.claude/skills/engineering-wisdom" ]]
+
+# --no-claude leaves CLAUDE.md alone; core skill discovery entries still land.
+no_claude="$temp/no-claude"
+install --directory "$no_claude" --no-claude --yes >"$temp/no-claude.out"
+grep -Fq 'Claude Code entrypoint: CLAUDE.md excluded (--no-claude)' "$temp/no-claude.out"
+[[ ! -e "$no_claude/CLAUDE.md" ]]
+[[ -f "$no_claude/.claude/skills/encode-invariant/SKILL.md" ]]
+
+# A rerun on an installed target reports the marked block as already current.
+install --directory "$no_claude" --merge --yes >"$temp/no-claude-rerun.out"
+[[ -f "$no_claude/CLAUDE.md" ]]
+install --directory "$no_claude" --merge --yes >"$temp/no-claude-current.out"
+grep -Fq 'skip     CLAUDE.md (Harness block current)' "$temp/no-claude-current.out"
 
 # Engineering wisdom remains explicit-only.
 wisdom="$temp/wisdom"
 install --directory "$wisdom" --with-engineering-wisdom --yes >"$temp/wisdom.out"
 grep -Fq 'Engineering wisdom: included (explicit opt-in)' "$temp/wisdom.out"
 [[ -f "$wisdom/.agents/skills/engineering-wisdom/SKILL.md" ]]
+[[ -f "$wisdom/.claude/skills/engineering-wisdom/SKILL.md" ]]
+grep -Fq '.agents/skills/engineering-wisdom/SKILL.md' \
+  "$wisdom/.claude/skills/engineering-wisdom/SKILL.md"
 grep -Fq 'allow_implicit_invocation: false' \
   "$wisdom/.agents/skills/engineering-wisdom/agents/openai.yaml"
 
@@ -102,12 +127,22 @@ claude="$temp/claude"
 mkdir -p "$claude"
 printf '# Local Claude Rules\n\nKeep this Claude-only rule.\n' >"$claude/CLAUDE.md"
 claude_before=$(shasum -a 256 "$claude/CLAUDE.md" | awk '{ print $1 }')
-install --directory "$claude" --claude --yes >"$temp/claude.out"
+install --directory "$claude" --yes >"$temp/claude.out"
 grep -Fq 'Keep this Claude-only rule.' "$claude/CLAUDE.md"
 cmp -s <(extract_block "$claude/CLAUDE.md") "$root/scripts/claude-harness-block.md"
 [[ "$(grep -Fc '@AGENTS.md' "$claude/CLAUDE.md")" == 1 ]]
 claude_backup=$(find "$claude/.harness-backup" -name CLAUDE.md -type f | head -n 1)
 [[ "$(shasum -a 256 "$claude_backup" | awk '{ print $1 }')" == "$claude_before" ]]
+
+# A malformed Claude marker pair fails closed on the default path.
+malformed_claude="$temp/malformed-claude"
+mkdir -p "$malformed_claude"
+printf 'custom\n<!-- HARNESS:BEGIN -->\nstale without end\n' >"$malformed_claude/CLAUDE.md"
+if install --directory "$malformed_claude" --yes >"$temp/malformed-claude.out" 2>&1; then
+  echo 'installer unexpectedly accepted malformed Claude markers' >&2
+  exit 1
+fi
+grep -Fq 'exactly one complete Harness marker pair' "$temp/malformed-claude.out"
 
 # Merge fills missing core files but never deletes or rewrites legacy protocol
 # files, a pre-existing database, or unrelated scripts.
