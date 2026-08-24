@@ -12,6 +12,10 @@ positive_paths=(
   .agents/skills/audit-onboarding-proposal/scripts/validate_evidence_capsule.py
   .agents/skills/encode-invariant/SKILL.md
   .agents/skills/improve-harness/SKILL.md
+  .claude/skills/onboard-repository/SKILL.md
+  .claude/skills/audit-onboarding-proposal/SKILL.md
+  .claude/skills/encode-invariant/SKILL.md
+  .claude/skills/improve-harness/SKILL.md
   docs/WORKFLOW.md
   docs/patterns/encoding-invariants.md
   docs/templates/application-runbook.md
@@ -37,7 +41,9 @@ for path in "${positive_paths[@]}"; do
   fi
 done
 
-for unrelated in docs/HARNESS.md README.md docs/research/application-legibility.md; do
+for unrelated in docs/HARNESS.md README.md docs/research/application-legibility.md \
+  .claude/skills/engineering-wisdom/SKILL.md \
+  scripts/engineering-wisdom-install-files.txt; do
   if printf '%s\n' "$unrelated" | "$classifier"; then
     echo "unrelated path triggered Harness core publication: $unrelated" >&2
     exit 1

@@ -59,6 +59,10 @@ done
 ! grep -Fq 'query matrix' "$claude_block"
 
 payloads=(
+  .claude/skills/audit-onboarding-proposal/SKILL.md
+  .claude/skills/encode-invariant/SKILL.md
+  .claude/skills/improve-harness/SKILL.md
+  .claude/skills/onboard-repository/SKILL.md
   .agents/skills/audit-onboarding-proposal/SKILL.md
   .agents/skills/audit-onboarding-proposal/agents/openai.yaml
   .agents/skills/audit-onboarding-proposal/scripts/validate_evidence_capsule.py
@@ -133,13 +137,34 @@ grep -Fq 'Do not add, edit, delete, enable, or execute a guard during onboarding
 
 grep -Fq 'read_source_text "scripts/agent-harness-block.md"' "$root/scripts/install-harness.sh"
 grep -Fq 'read_source_text "scripts/claude-harness-block.md"' "$root/scripts/install-harness.sh"
+grep -Fq 'INSTALL_CLAUDE_SHIM=1' "$root/scripts/install-harness.sh"
+grep -Fq -- '--no-claude)' "$root/scripts/install-harness.sh"
 grep -Fq 'REFRESH_AGENT_SHIM=1' "$root/scripts/install-harness.sh"
 grep -Fq 'ENGINEERING_WISDOM_PAYLOAD_MANIFEST="scripts/engineering-wisdom-install-files.txt"' "$root/scripts/install-harness.sh"
 ! grep -Fq 'CLI_PAYLOAD_MANIFEST' "$root/scripts/install-harness.sh"
 
 grep -Fq 'Read-SourceText "scripts/agent-harness-block.md"' "$root/scripts/install-harness.ps1"
+grep -Fq 'Read-SourceText "scripts/claude-harness-block.md"' "$root/scripts/install-harness.ps1"
 grep -Fq '[switch]$RefreshAgentShim' "$root/scripts/install-harness.ps1"
+grep -Fq '[switch]$NoClaude' "$root/scripts/install-harness.ps1"
+grep -Fq '$script:InstallClaudeShim = !$NoClaude' "$root/scripts/install-harness.ps1"
 grep -Fq '$script:EngineeringWisdomPayloadManifest = "scripts/engineering-wisdom-install-files.txt"' "$root/scripts/install-harness.ps1"
 ! grep -Fq 'CliPayloadManifest' "$root/scripts/install-harness.ps1"
+
+
+for name in encode-invariant onboard-repository improve-harness audit-onboarding-proposal; do
+  shim="$root/.claude/skills/$name/SKILL.md"
+  agent_source="$root/.agents/skills/$name/SKILL.md"
+  [[ "$(grep -Fc "name: $name" "$shim")" == 1 ]]
+  cmp -s \
+    <(sed -n '/^---$/,/^---$/p' "$shim") \
+    <(sed -n '/^---$/,/^---$/p' "$agent_source")
+  grep -Fq ".agents/skills/$name/SKILL.md" "$shim"
+  ! grep -Fq 'openai.yaml' "$shim"
+done
+for name in onboard-repository improve-harness audit-onboarding-proposal; do
+  grep -Fq 'Explicit-only.' "$root/.claude/skills/$name/SKILL.md"
+done
+! grep -Fq 'Explicit-only.' "$root/.claude/skills/encode-invariant/SKILL.md"
 
 echo "repository authority, bounded context, canonical shims, and core-only installer parity passed"

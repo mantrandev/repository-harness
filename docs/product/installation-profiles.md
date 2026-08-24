@@ -21,15 +21,42 @@ Core installation:
 - does not install schemas, databases, orchestration, or background processes;
 - does not delete pre-existing legacy Harness files.
 
+## Agent Entrypoints
+
+Harness installs into one repository. It never writes global or user-level
+agent configuration.
+
+Codex-family agents auto-load `AGENTS.md`. Claude Code does not, so the core
+also installs a `CLAUDE.md` shim that `@`-imports `AGENTS.md` inside a marked
+Harness block. Writing that shim is the default. `--no-claude` / `-NoClaude`
+suppresses it; `--claude` / `-Claude` states the default explicitly. Both
+installers report which entrypoints they wrote.
+
+`CLAUDE.md` follows marked-block rules: a stale block is refreshed in place, a
+current block is skipped without a backup, a file without the block receives it
+appended after a backup, and a malformed marker pair fails closed.
+
+Skill discovery is directory-scoped per agent. Canonical skill procedure lives
+once under `.agents/skills/<name>/SKILL.md`. The core also installs a
+`.claude/skills/<name>/SKILL.md` discovery entry whose frontmatter matches the
+canonical skill and whose body points at it. Discovery entries are managed core
+files: they are recorded under `.harness-core/base/` and update through the same
+three-way merge. They are inert for agents that do not read them, so
+`--no-claude` does not remove them.
+
+See `docs/decisions/0029-multi-agent-entrypoints-and-claude-default.md`.
+
 ## Engineering Wisdom Add-On
 
 `--with-engineering-wisdom` or `-WithEngineeringWisdom` copies the
 explicit-only advisory skill declared in
-`scripts/engineering-wisdom-install-files.txt`.
+`scripts/engineering-wisdom-install-files.txt`, including its Claude discovery
+entry.
 
 Omitting the flag does not install or activate the skill. A later install
 without the flag leaves an existing copy untouched. Removal is explicit and
-stateless: delete only `.agents/skills/engineering-wisdom/`.
+stateless: delete only `.agents/skills/engineering-wisdom/` and
+`.claude/skills/engineering-wisdom/`.
 
 Advice cannot establish consumer policy or authorize an architecture rewrite.
 

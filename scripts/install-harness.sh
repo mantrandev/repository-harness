@@ -19,12 +19,16 @@ Options:
                          Refresh an existing AGENTS.md into the small Harness
                          shim after backing it up. Old Harness-generated files
                          are replaced; custom files receive a marked block.
-      --claude           Also install or refresh CLAUDE.md so Claude Code
-                         auto-loads the harness context. Claude Code never
-                         auto-loads AGENTS.md; the shim @-imports AGENTS.md
-                         as its single policy source inside a marked block.
-                         Existing CLAUDE.md files get the block appended
-                         after a backup; a stale block is refreshed in place.
+      --claude           Install or refresh CLAUDE.md so Claude Code
+                         auto-loads the harness context. This is the default.
+                         Claude Code never auto-loads AGENTS.md; the shim
+                         @-imports AGENTS.md as its single policy source
+                         inside a marked block. Existing CLAUDE.md files get
+                         the block appended after a backup; a stale block is
+                         refreshed in place.
+      --no-claude        Leave CLAUDE.md untouched. The core payload still
+                         installs .claude/skills/ discovery entries, which
+                         are inert for agents that do not read them.
       --override         On protected-path conflict, back up and replace
                          AGENTS.md and docs/.
       --force            Overwrite existing files after backing them up.
@@ -47,10 +51,10 @@ Examples:
   scripts/install-harness.sh --directory /path/to/project --yes
   scripts/install-harness.sh --directory /path/to/project --with-engineering-wisdom --yes
   scripts/install-harness.sh ./my-project --force
-  curl -fsSL https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh | bash -s -- --yes
-  curl -fsSL https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh | bash -s -- --merge --yes
-  curl -fsSL https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh | bash -s -- --merge --refresh-agent-shim --yes
-  curl -fsSL https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh | bash -s -- --claude --yes
+  curl -fsSL https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/install-harness.sh | bash -s -- --yes
+  curl -fsSL https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/install-harness.sh | bash -s -- --merge --yes
+  curl -fsSL https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/install-harness.sh | bash -s -- --merge --refresh-agent-shim --yes
+  curl -fsSL https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/install-harness.sh | bash -s -- --no-claude --yes
 EOF
 }
 
@@ -579,7 +583,7 @@ stage_harness_core_cli() {
     fi
     [[ "$release_tag" =~ ^harness-v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9]+)*$ ]] ||
       fail "invalid Harness core release tag: $release_tag"
-    base_url="${HARNESS_CORE_CLI_BASE_URL:-https://github.com/hoangnb24/repository-harness/releases/download/$release_tag}"
+    base_url="${HARNESS_CORE_CLI_BASE_URL:-https://github.com/mantrandev/repository-harness/releases/download/$release_tag}"
     binary_url="${base_url%/}/$CORE_BINARY_NAME"
     checksum_url="$binary_url.sha256"
     checksum_tmp="$CORE_STAGE_ROOT/$CORE_BINARY_NAME.sha256"
@@ -751,7 +755,7 @@ FORCE=0
 DRY_RUN=0
 INSTALL_ENGINEERING_WISDOM=0
 REFRESH_AGENT_SHIM=0
-INSTALL_CLAUDE_SHIM=0
+INSTALL_CLAUDE_SHIM=1
 REQUESTED_CONFLICT_ACTION=""
 POSITIONAL_TARGET=""
 
@@ -784,6 +788,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --claude)
       INSTALL_CLAUDE_SHIM=1
+      shift
+      ;;
+    --no-claude)
+      INSTALL_CLAUDE_SHIM=0
       shift
       ;;
     --override)
@@ -833,9 +841,9 @@ SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" 2>/dev/null && pwd -P || printf '')"
 SOURCE_ROOT=""
 SOURCE_MODE="remote"
-SOURCE_BASE_URL="${HARNESS_SOURCE_BASE_URL:-https://raw.githubusercontent.com/hoangnb24/repository-harness/main}"
+SOURCE_BASE_URL="${HARNESS_SOURCE_BASE_URL:-https://raw.githubusercontent.com/mantrandev/repository-harness/main}"
 SOURCE_BASE_URL="${SOURCE_BASE_URL%/}"
-CORE_SOURCE_BASE_URL="${HARNESS_CORE_SOURCE_BASE_URL:-https://raw.githubusercontent.com/hoangnb24/repository-harness/main}"
+CORE_SOURCE_BASE_URL="${HARNESS_CORE_SOURCE_BASE_URL:-https://raw.githubusercontent.com/mantrandev/repository-harness/main}"
 CORE_SOURCE_BASE_URL="${CORE_SOURCE_BASE_URL%/}"
 PAYLOAD_MANIFEST="scripts/harness-install-files.txt"
 ENGINEERING_WISDOM_PAYLOAD_MANIFEST="scripts/engineering-wisdom-install-files.txt"
@@ -892,6 +900,11 @@ if [ "$INSTALL_ENGINEERING_WISDOM" -eq 1 ]; then
   log "Engineering wisdom: included (explicit opt-in)"
 else
   log "Engineering wisdom: excluded"
+fi
+if [ "$INSTALL_CLAUDE_SHIM" -eq 1 ]; then
+  log "Claude Code entrypoint: CLAUDE.md included"
+else
+  log "Claude Code entrypoint: CLAUDE.md excluded (--no-claude)"
 fi
 log "Target project: $TARGET_DIR"
 

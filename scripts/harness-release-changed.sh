@@ -5,6 +5,7 @@ set -euo pipefail
 # binary, its embedded payload, bootstrap contract, or release proof.
 pattern='^('
 pattern+='\.agents/skills/(onboard-repository|audit-onboarding-proposal|encode-invariant|improve-harness)/|'
+pattern+='\.claude/skills/(onboard-repository|audit-onboarding-proposal|encode-invariant|improve-harness)/|'
 pattern+='crates/harness/|Cargo\.toml$|Cargo\.lock$|'
 pattern+='docs/(WORKFLOW|README)\.md$|docs/patterns/encoding-invariants\.md$|docs/product/README\.md$|'
 pattern+='docs/plans/active/README\.md$|docs/templates/(application-runbook|decision|exec-plan|harness-improvement)\.md$|'

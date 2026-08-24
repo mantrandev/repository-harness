@@ -9,6 +9,11 @@ plans, code, tests, CI, and runtime evidence define the work.
 It is not a task database, story tracker, agent orchestrator, or application
 runtime.
 
+This is a fork of
+[`hoangnb24/repository-harness`](https://github.com/hoangnb24/repository-harness)
+that installs entrypoints and skill discovery for Claude Code alongside
+Codex-family agents. See [Agent Entrypoints](#agent-entrypoints).
+
 ## What It Solves
 
 Coding agents often fail for ordinary engineering reasons:
@@ -58,13 +63,15 @@ Start with [`AGENTS.md`](AGENTS.md), then
 
 The default core contains:
 
-- a compact `AGENTS.md` entrypoint;
+- a compact `AGENTS.md` entrypoint plus a `CLAUDE.md` shim that imports it;
 - the repository workflow and documentation map;
 - product, decision, and execution-plan structure;
 - optional templates for durable plans, decisions, application runbooks, and
   evidence-backed Harness improvements; and
 - an invariant-encoding pattern and skill, plus explicit-only onboarding and
-  proposal-audit skills.
+  proposal-audit skills; and
+- per-agent skill discovery entries under `.agents/skills/` and
+  `.claude/skills/`.
 
 It does not install application architecture, product policy, validation
 commands, credentials, a database, schemas, orchestration, or background
@@ -78,19 +85,47 @@ The exact payload is declared in
 From a target repository:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.sh?$(date +%s)" |
+curl -fsSL "https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/install-harness.sh?$(date +%s)" |
   bash -s -- --yes
 ```
 
 On PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/install-harness.ps1"))) -Yes
+& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/install-harness.ps1"))) -Yes
 ```
 
 Use `--merge` / `-Merge` to preserve existing files and add only missing
 Harness paths. Use `--override` / `-Override` only when replacement is
 intentional. Use `--dry-run` / `-DryRun` to preview.
+
+## Agent Entrypoints
+
+Harness installs into one repository. It writes no global or user-level agent
+configuration.
+
+Codex-family agents auto-load `AGENTS.md`. Claude Code does not, so the default
+install also writes a `CLAUDE.md` shim that `@`-imports `AGENTS.md` inside a
+marked Harness block:
+
+```bash
+scripts/install-harness.sh --yes              # AGENTS.md and CLAUDE.md
+scripts/install-harness.sh --no-claude --yes  # AGENTS.md only
+```
+
+An existing `CLAUDE.md` keeps its own text: the block is appended after a
+backup, a stale block is refreshed in place, a current block is skipped, and a
+malformed marker pair fails closed.
+
+Skill discovery is directory-scoped per agent. Each skill's procedure lives once
+under `.agents/skills/<name>/SKILL.md`. The core also installs a matching
+`.claude/skills/<name>/SKILL.md` discovery entry that points at it, so both
+agents reach the same instructions. Discovery entries are managed core files and
+update through the same three-way merge. They are inert for agents that do not
+read them, so `--no-claude` leaves them in place.
+
+See
+[`decision 0029`](docs/decisions/0029-multi-agent-entrypoints-and-claude-default.md).
 
 The bootstrap downloads a versioned `harness` binary and checksum, verifies
 release identity, and delegates installation to that candidate.
@@ -139,6 +174,8 @@ Harness improvement is also explicit and requires baseline-to-rerun evidence:
 ```text
 $improve-harness
 ```
+
+Every skill above is reachable from Codex-family agents and Claude Code.
 
 Engineering advice is a separate opt-in payload:
 

@@ -15,6 +15,26 @@ impl CoreDistributionPort for EmbeddedCoreDistribution {
         add(&mut files, "AGENTS.md", &agents)?;
         add(
             &mut files,
+            ".claude/skills/audit-onboarding-proposal/SKILL.md",
+            include_bytes!("../../../../.claude/skills/audit-onboarding-proposal/SKILL.md"),
+        )?;
+        add(
+            &mut files,
+            ".claude/skills/encode-invariant/SKILL.md",
+            include_bytes!("../../../../.claude/skills/encode-invariant/SKILL.md"),
+        )?;
+        add(
+            &mut files,
+            ".claude/skills/improve-harness/SKILL.md",
+            include_bytes!("../../../../.claude/skills/improve-harness/SKILL.md"),
+        )?;
+        add(
+            &mut files,
+            ".claude/skills/onboard-repository/SKILL.md",
+            include_bytes!("../../../../.claude/skills/onboard-repository/SKILL.md"),
+        )?;
+        add(
+            &mut files,
             ".agents/skills/audit-onboarding-proposal/SKILL.md",
             include_bytes!("../../../../.agents/skills/audit-onboarding-proposal/SKILL.md"),
         )?;
