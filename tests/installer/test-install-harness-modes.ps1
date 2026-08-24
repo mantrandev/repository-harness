@@ -95,6 +95,7 @@ try {
     # A rerun creates the entrypoint, then leaves a current block byte-identical.
     Invoke-Install $NoClaude @("Merge")
     if (!(Test-Path (Join-Path $NoClaude "CLAUDE.md"))) { throw "rerun did not create CLAUDE.md" }
+    if (!(Test-Path (Join-Path $NoClaude "scripts/bin/harness.exe"))) { throw "reinstall lost the core binary during in-place swap" }
     $ClaudeCurrentHash = (Get-FileHash -Algorithm SHA256 (Join-Path $NoClaude "CLAUDE.md")).Hash
     Invoke-Install $NoClaude @("Merge")
     if ((Get-FileHash -Algorithm SHA256 (Join-Path $NoClaude "CLAUDE.md")).Hash -ne $ClaudeCurrentHash) { throw "rerun rewrote a current Claude block" }

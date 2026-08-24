@@ -389,7 +389,7 @@ function Install-HarnessCore {
         }
         if ($commandStatus -eq 0 -and !$DryRun) {
             if (Test-Path $target) {
-                [System.IO.File]::Replace($targetTemp, $target, $null)
+                [System.IO.File]::Replace($targetTemp, $target, [NullString]::Value)
             } else {
                 Move-Item -LiteralPath $targetTemp -Destination $target
             }
