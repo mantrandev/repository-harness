@@ -99,7 +99,7 @@ try {
     $ClaudeCurrentHash = (Get-FileHash -Algorithm SHA256 (Join-Path $NoClaude "CLAUDE.md")).Hash
     Invoke-Install $NoClaude @("Merge")
     if ((Get-FileHash -Algorithm SHA256 (Join-Path $NoClaude "CLAUDE.md")).Hash -ne $ClaudeCurrentHash) { throw "rerun rewrote a current Claude block" }
-    if (Test-Path (Join-Path $NoClaude ".harness-backup")) { throw "rerun backed up an unchanged CLAUDE.md" }
+    if (Get-ChildItem (Join-Path $NoClaude ".harness-backup") -Recurse -Filter "CLAUDE.md" -File -ErrorAction SilentlyContinue) { throw "rerun backed up an unchanged CLAUDE.md" }
 
     # -Claude and -NoClaude cannot be combined.
     $AcceptedBothClaude = $false
