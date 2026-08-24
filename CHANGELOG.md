@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-08-24 - PR #1
+
+- feat(installer): install Claude Code entrypoint and skill discovery by default (@mantrandev)
+- Merge commit: `4cce40c64f5b4098e0d4d2169846128d81dbf530`
+- Harness core candidate: `harness-v0.1.11` (publication requires platform proof)
+- Changed files: 23 total (first 20 shown)
+  - `.claude/skills/audit-onboarding-proposal/SKILL.md`
+  - `.claude/skills/encode-invariant/SKILL.md`
+  - `.claude/skills/engineering-wisdom/SKILL.md`
+  - `.claude/skills/improve-harness/SKILL.md`
+  - `.claude/skills/onboard-repository/SKILL.md`
+  - `Cargo.toml`
+  - `README.md`
+  - `crates/harness/src/infrastructure/embedded_distribution.rs`
+  - `docs/decisions/0029-multi-agent-entrypoints-and-claude-default.md`
+  - `docs/decisions/README.md`
+  - `docs/product/installation-profiles.md`
+  - `scripts/engineering-wisdom-install-files.txt`
+  - `scripts/harness-install-files.txt`
+  - `scripts/harness-release-changed.sh`
+  - `scripts/install-harness.ps1`
+  - `scripts/install-harness.sh`
+  - `tests/docs/test-doc-contracts.sh`
+  - `tests/installer/assert-agent-authority-contract.sh`
+  - `tests/installer/assert-install-manifest-links.sh`
+  - `tests/installer/test-engineering-wisdom-opt-in.sh`
+  - _… 3 additional file(s) omitted from this entry._
+
 ## 2026-08-13 - PR #66
 
 - fix(installer): reject unknown PowerShell parameters (@hoangnb24)
