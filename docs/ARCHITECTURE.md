@@ -1,7 +1,7 @@
 # Architecture
 
-`repository-harness` has one Rust binary, `harness`, plus thin Bash and
-PowerShell bootstraps.
+`repository-harness` has one Rust binary, `harness`, plus a thin Bash
+bootstrap. This fork targets Apple Silicon macOS 13 or newer only.
 
 ## Product Boundary
 

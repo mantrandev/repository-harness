@@ -64,11 +64,7 @@ fn latest_release_handoff_retains_candidate_across_agent_resolved_conflict() {
     assert!(workspace
         .path()
         .join(".harness-core/update-candidate")
-        .join(if cfg!(windows) {
-            "harness.exe"
-        } else {
-            "harness"
-        })
+        .join("harness")
         .is_file());
 
     fs::write(
@@ -81,11 +77,7 @@ fn latest_release_handoff_retains_candidate_across_agent_resolved_conflict() {
     let retained_candidate = workspace
         .path()
         .join(".harness-core/update-candidate")
-        .join(if cfg!(windows) {
-            "harness.exe"
-        } else {
-            "harness"
-        });
+        .join("harness");
     fs::write(&retained_candidate, b"tampered candidate").unwrap();
     let tampered = run_update(
         binary,
@@ -451,10 +443,6 @@ fn run_update(
 fn platform_artifact() -> &'static str {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("macos", "aarch64") => "harness-macos-arm64",
-        ("macos", "x86_64") => "harness-macos-x64",
-        ("linux", "aarch64") => "harness-linux-arm64",
-        ("linux", "x86_64") => "harness-linux-x64",
-        ("windows", "x86_64") => "harness-windows-x64.exe",
         (os, arch) => panic!("unsupported test platform: {os}/{arch}"),
     }
 }

@@ -23,7 +23,6 @@ positive_paths=(
   scripts/agent-harness-block.md
   scripts/harness-install-files.txt
   scripts/install-harness.sh
-  scripts/install-harness.ps1
   scripts/build-harness-release.sh
   scripts/harness-release-changed.sh
   scripts/promote-harness-release-tag.sh

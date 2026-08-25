@@ -45,19 +45,11 @@ fi
 
 case "$triple" in
   aarch64-apple-darwin) platform="macos-arm64" ;;
-  x86_64-apple-darwin) platform="macos-x64" ;;
-  x86_64-unknown-linux-gnu) platform="linux-x64" ;;
-  aarch64-unknown-linux-gnu) platform="linux-arm64" ;;
-  x86_64-pc-windows-msvc) platform="windows-x64" ;;
   *) fail "Unsupported release target: $triple" ;;
 esac
 
 binary_name="harness"
 artifact_name="harness-$platform"
-if [ "$platform" = "windows-x64" ]; then
-  binary_name="harness.exe"
-  artifact_name="$artifact_name.exe"
-fi
 
 if [ -n "$target" ]; then
   binary="$repo_root/target/$target/$profile/$binary_name"
@@ -65,13 +57,14 @@ else
   binary="$repo_root/target/$profile/$binary_name"
 fi
 
+export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-13.0}"
 (cd "$repo_root" && cargo "${cargo_args[@]}")
 [ -f "$binary" ] || fail "Expected compiled binary missing: $binary"
 
 mkdir -p "$out_dir"
 artifact="$out_dir/$artifact_name"
 cp "$binary" "$artifact"
-if [ "$platform" != "windows-x64" ]; then chmod 755 "$artifact"; fi
+chmod 755 "$artifact"
 
 if command -v shasum >/dev/null 2>&1; then
   (cd "$out_dir" && shasum -a 256 "$(basename "$artifact")" > "$(basename "$artifact").sha256")

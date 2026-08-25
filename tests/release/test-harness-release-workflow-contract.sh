@@ -5,8 +5,8 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 release="$root/.github/workflows/harness-release.yml"
 post_merge="$root/.github/workflows/post-merge-maintenance.yml"
 
-[[ "$(grep -Ec '^          - platform: (macos-arm64|macos-x64|linux-x64|linux-arm64|windows-x64)$' "$release")" == 5 ]]
-for platform in macos-arm64 macos-x64 linux-x64 linux-arm64 windows-x64; do
+[[ "$(grep -Ec '^          - platform: macos-arm64$' "$release")" == 1 ]]
+for platform in macos-arm64; do
   grep -Fq -- "- platform: $platform" "$release"
 done
 grep -Fq 'run: scripts/validate-premerge.sh' "$release"
@@ -35,4 +35,4 @@ grep -Fq 'uses: ./.github/workflows/harness-release.yml' "$post_merge"
 grep -Fq 'harness_release_tag="harness-v$new_version"' "$post_merge"
 grep -Fq 'checkout_ref: ${{ needs.prepare.outputs.maintenance_ref }}' "$post_merge"
 
-echo "Harness core five-platform proof-before-promotion workflow contract passed"
+echo "Harness core Apple Silicon proof-before-promotion workflow contract passed"

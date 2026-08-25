@@ -7,23 +7,19 @@ temp=$(mktemp -d)
 trap 'rm -rf "$temp"' EXIT
 
 for artifact in \
-  harness-linux-arm64 harness-linux-arm64.sha256 \
-  harness-linux-x64 harness-linux-x64.sha256 \
-  harness-macos-arm64 harness-macos-arm64.sha256 \
-  harness-macos-x64 harness-macos-x64.sha256 \
-  harness-windows-x64.exe harness-windows-x64.exe.sha256; do
+  harness-macos-arm64 harness-macos-arm64.sha256; do
   touch "$temp/$artifact"
 done
 "$verify" "$temp" >/dev/null
 
-touch "$temp/harness-cli-linux-x64"
+touch "$temp/harness-cli-macos-arm64"
 if "$verify" "$temp" >/dev/null 2>&1; then
   echo "mixed core/compatibility artifact inventory unexpectedly passed" >&2
   exit 1
 fi
-rm "$temp/harness-cli-linux-x64"
+rm "$temp/harness-cli-macos-arm64"
 
-rm "$temp/harness-linux-x64"
+rm "$temp/harness-macos-arm64"
 if "$verify" "$temp" >/dev/null 2>&1; then
   echo "incomplete core artifact inventory unexpectedly passed" >&2
   exit 1

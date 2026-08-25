@@ -9,9 +9,9 @@ use sha2::{Digest, Sha256};
 use crate::application::{CandidateExit, CandidateRequest, PortError, UpdateCandidatePort};
 
 const RELEASE_TAG_URL: &str =
-    "https://raw.githubusercontent.com/hoangnb24/repository-harness/main/scripts/harness-release-tag";
+    "https://raw.githubusercontent.com/mantrandev/repository-harness/main/scripts/harness-release-tag";
 const RELEASE_DOWNLOAD_ROOT: &str =
-    "https://github.com/hoangnb24/repository-harness/releases/download";
+    "https://github.com/mantrandev/repository-harness/releases/download";
 
 pub struct LatestReleaseCandidates {
     test_release_root: Option<String>,
@@ -336,10 +336,6 @@ fn verify_candidate(path: &Path, expected: &str) -> Result<(), PortError> {
 fn candidate_artifact() -> Result<&'static str, PortError> {
     match (env::consts::OS, env::consts::ARCH) {
         ("macos", "aarch64") => Ok("harness-macos-arm64"),
-        ("macos", "x86_64") => Ok("harness-macos-x64"),
-        ("linux", "aarch64") => Ok("harness-linux-arm64"),
-        ("linux", "x86_64") => Ok("harness-linux-x64"),
-        ("windows", "x86_64") => Ok("harness-windows-x64.exe"),
         (os, arch) => Err(PortError::new(format!(
             "unsupported Harness update platform: {os}/{arch}"
         ))),
@@ -347,11 +343,7 @@ fn candidate_artifact() -> Result<&'static str, PortError> {
 }
 
 fn candidate_filename() -> &'static str {
-    if cfg!(windows) {
-        "harness.exe"
-    } else {
-        "harness"
-    }
+    "harness"
 }
 
 fn persisted_root(root: &Path) -> PathBuf {

@@ -10,7 +10,6 @@ scripts/validate-premerge.sh
 
 - `install-harness.sh`: Bash bootstrap for the versioned Rust `harness`
   candidate.
-- `install-harness.ps1`: PowerShell bootstrap with the same product contract.
 - `harness-install-files.txt`: exact embedded core payload.
 - `engineering-wisdom-install-files.txt`: independent optional advisory
   payload.
@@ -27,7 +26,8 @@ install or update. They do not contain a database or compatibility profile.
 - `harness-release-tag`: current core release pointer.
 - `verify-harness-release-identity.sh`: pretag and published-source identity
   guard.
-- `verify-harness-release-assets.sh`: exact cross-platform asset inventory.
+- `verify-harness-release-assets.sh`: exact Apple Silicon macOS asset
+  inventory.
 - `promote-harness-release-tag.sh`: promote a proven source commit.
 - `render-changelog-files.py`: render bounded changed-file lists.
 

@@ -79,7 +79,6 @@ grep -Fxq 'scripts/bin/harness' "$fresh/.gitignore"
 for legacy in \
   scripts/bin/harness-cli \
   scripts/bootstrap-harness.sh \
-  scripts/bootstrap-harness.ps1 \
   scripts/schema \
   docs/contracts/harness-orchestration-v1.md \
   harness.db; do

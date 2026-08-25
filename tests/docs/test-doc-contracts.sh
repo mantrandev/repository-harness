@@ -132,7 +132,6 @@ for gate in "${required_gates[@]}"; do
 done
 
 require .github/workflows/premerge.yml 'run: scripts/validate-premerge.sh'
-require .github/workflows/premerge.yml 'tests/installer/test-install-harness-modes.ps1'
 require .github/workflows/harness-release.yml 'run: scripts/validate-premerge.sh'
 
 "$root/tests/installer/assert-agent-authority-contract.sh" >/dev/null

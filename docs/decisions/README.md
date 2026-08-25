@@ -17,6 +17,7 @@ Use `docs/templates/decision.md`. Task-local choices stay in the active plan.
 | 0027 | End Protocol V1 And Focus The Repository Protocol |
 | 0028 | Authoritative Invariant Encoding |
 | 0029 | Multi-Agent Entrypoints And Claude Code By Default |
+| 0030 | Apple Silicon macOS Only, Published From This Fork |
 
 These decisions describe upstream Harness. Installed consumers begin with an
 empty decision index and add only real consumer choices.

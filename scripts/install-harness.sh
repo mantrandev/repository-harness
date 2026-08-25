@@ -490,11 +490,8 @@ detect_cli_platform() {
 
   case "$os:$arch" in
     Darwin:arm64)  printf 'macos-arm64' ;;
-    Darwin:x86_64) printf 'macos-x64' ;;
-    Linux:x86_64)  printf 'linux-x64' ;;
-    Linux:aarch64|Linux:arm64) printf 'linux-arm64' ;;
     *)
-      fail "Unsupported Harness CLI platform: $os/$arch."
+      fail "Unsupported Harness CLI platform: $os/$arch. This fork supports Apple Silicon macOS only."
       ;;
   esac
 }
@@ -542,8 +539,7 @@ merge_core_gitignore() {
   local target="$1"
   local marker="# Harness core maintenance binary"
   local unix_rule="scripts/bin/harness"
-  local windows_rule="scripts/bin/harness.exe"
-  if [ -f "$target" ] && grep -Fxq "$unix_rule" "$target" && grep -Fxq "$windows_rule" "$target"; then
+  if [ -f "$target" ] && grep -Fxq "$unix_rule" "$target"; then
     log "skip     .gitignore (Harness core binary rules already present)"
     return
   fi
@@ -553,7 +549,6 @@ merge_core_gitignore() {
   fi
   local missing_rules=()
   [ -f "$target" ] && grep -Fxq "$unix_rule" "$target" || missing_rules+=("$unix_rule")
-  [ -f "$target" ] && grep -Fxq "$windows_rule" "$target" || missing_rules+=("$windows_rule")
   {
     [ -s "$target" ] && printf '\n'
     printf '%s\n' "$marker"

@@ -69,11 +69,4 @@ after=$(shasum -a 256 \
 [[ "$before" == "$after" ]]
 grep -Fq 'Engineering wisdom: excluded' "$temp/reinstall.out"
 
-# PowerShell exposes the same named selection and consumes the same manifest.
-grep -Fq '[switch]$WithEngineeringWisdom' "$root/scripts/install-harness.ps1"
-grep -Fq '[switch]$Claude' "$root/scripts/install-harness.ps1"
-grep -Fq \
-  '$script:EngineeringWisdomPayloadManifest = "scripts/engineering-wisdom-install-files.txt"' \
-  "$root/scripts/install-harness.ps1"
-
 echo "engineering-wisdom default exclusion and explicit opt-in passed"
