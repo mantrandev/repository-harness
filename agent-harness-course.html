@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness cho AI Agent — khoá học</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23EDF0F4'/%3E%3Cpath d='M8 8h48v48H8z' fill='none' stroke='%231B2A41' stroke-width='4'/%3E%3Cpath d='M8 26h48' stroke='%23C1440E' stroke-width='7'/%3E%3Cpath d='M18 26v22M46 26v22' stroke='%231B2A41' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --paper:#EDF0F4; --grid:#C9D2DC; --ink:#1B2A41; --ink-soft:#4A5A6E;
+    --rust:#C1440E; --rust-soft:#FBE9E0; --peach:#F4B08C; --white:#FFF;
+    --mut:#E7EAEF; --panel:#F4F6F8; --steel:#9AA6B4;
+    --good:#2E7D5B; --warn:#9A6A1F;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;min-height:100%}
+  body{
+    font-family:var(--mono);background:var(--paper);color:var(--ink);padding:16px;
+    background-image:linear-gradient(var(--grid) .5px,transparent .5px),linear-gradient(90deg,var(--grid) .5px,transparent .5px);
+    background-size:24px 24px;
+  }
+  .sheet{width:100%;max-width:none;margin:0;border:1.5px solid var(--ink);outline:.5px solid var(--ink);
+         outline-offset:5px;padding:22px;background:rgba(237,240,244,.6)}
+  .content{width:100%;max-width:none;min-width:0}
+  h1{font-size:clamp(17px,3.4vw,24px);letter-spacing:.5px}
+  .sub{font-size:12px;color:var(--rust);font-weight:700;margin:4px 0 14px}
+  .meta{display:flex;flex-wrap:wrap;gap:5px 18px;font-size:10.5px;color:var(--ink-soft);
+        border-top:1px solid var(--grid);border-bottom:1px solid var(--grid);padding:9px 0;margin-bottom:16px}
+  .meta b{color:var(--ink);font-weight:700;letter-spacing:1px}
+  .meta .ok{color:var(--good)} .meta .hot{color:var(--rust)}
+  section{margin-top:22px}
+  h2{font-size:14px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px;
+     padding-bottom:6px;border-bottom:1.2px solid var(--ink)}
+  h3{font-size:13.5px;margin:14px 0 7px}
+  p{font-size:12px;line-height:1.7;color:var(--ink-soft);margin:9px 0}
+  p b,li b,td b{color:var(--ink);font-weight:700}
+  a{color:var(--rust)}
+  .k{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--ink-soft)}
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .tab{font-family:var(--mono);font-size:11.5px;padding:8px 12px;cursor:pointer;
+       background:var(--white);border:1.2px solid var(--ink);color:var(--ink);transition:all .15s}
+  .tab:hover{box-shadow:3px 3px 0 var(--ink);transform:translateY(-2px)}
+  .tab.active{background:var(--ink);color:var(--white)}
+  .tab.active .n{color:var(--peach)}
+  .tab .n{font-weight:700;margin-right:6px}
+  .stage-wrap{border:1.2px solid var(--ink);background:var(--white);position:relative}
+  .stage-wrap svg{display:block;width:100%;height:auto}
+  .lanehdr{font-size:13px;font-weight:700;letter-spacing:1px}
+  .divider{stroke:var(--grid);stroke-width:1.2;stroke-dasharray:4 4}
+  .node rect{fill:var(--white);stroke:var(--ink);stroke-width:1.2;transition:all .3s}
+  .node .lbl{font-size:12px;font-weight:700;fill:var(--ink)}
+  .node .sub2{font-size:9.5px;fill:var(--ink-soft)}
+  .node.active rect{fill:var(--rust-soft);stroke:var(--rust);stroke-width:2}
+  .node.active .lbl{fill:var(--rust)}
+  .edge{stroke:var(--ink-soft);stroke-width:1.2;fill:none}
+  .panel{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .desc,.mind{border:1.2px solid var(--ink);background:var(--white);padding:14px;min-height:120px}
+  .desc{border-color:var(--ink-soft)}
+  .mind{border-color:var(--rust)}
+  .mind .k{color:var(--rust)}
+  .desc h3,.mind h3{font-size:13.5px;margin:6px 0 8px}
+  .desc p{color:var(--ink-soft)} .mind p{color:var(--ink)}
+  .cost{margin-top:10px;font-size:11px;font-weight:700}
+  .desc .cost{color:var(--ink)} .mind .cost{color:var(--rust)}
+  .flag{margin-top:8px;font-size:11px;line-height:1.65;font-weight:700;padding:7px 10px;border:1px dashed;
+        color:var(--ink);border-color:var(--steel);background:var(--panel)}
+  .flag.hot{color:var(--rust);border-color:var(--rust);background:var(--rust-soft)}
+  .flag.ok{color:var(--good);border-color:var(--good);background:var(--white)}
+  .tiles{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+  .tile{flex:1 1 150px;border:1.2px solid var(--ink);background:var(--white);padding:11px 13px}
+  .tile .k{display:block;margin-bottom:4px}
+  .tile .v{font-size:21px;font-weight:700;color:var(--ink);line-height:1.2}
+  .tile .u{font-size:10.5px;color:var(--ink-soft)}
+  .tile.hot{border-color:var(--rust)} .tile.hot .v{color:var(--rust)}
+  .bar{margin-bottom:13px}
+  .bar .lbl{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;margin-bottom:4px}
+  .bar .val{font-weight:700}
+  .bar .track{height:13px;background:var(--mut);border:1px solid var(--grid)}
+  .bar .fill{height:100%;background:var(--ink);transition:width .2s}
+  .bar.hot .fill{background:var(--rust)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:11.5px}
+  thead th{text-align:left;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);
+           font-weight:700;padding:0 12px 7px 0;border-bottom:1.2px solid var(--ink)}
+  tbody td{padding:9px 12px 9px 0;border-bottom:1px solid var(--grid);vertical-align:top;color:var(--ink-soft)}
+  tbody tr:hover td{background:var(--white);color:var(--ink)}
+  thead th:last-child,tbody td:last-child{padding-right:0}
+  .x{color:var(--rust);font-weight:700} .yes{color:var(--good);font-weight:700}
+  .filter-field{display:block;width:100%;font-family:var(--mono);font-size:12px;line-height:1.4;color:var(--ink);
+                background:var(--white);border:1.2px solid var(--ink);padding:12px 14px;margin:0 0 18px;outline:none;
+                transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+  .filter-field:focus{border-color:var(--rust);box-shadow:3px 3px 0 var(--ink);transform:translateY(-2px)}
+  .filter-field::placeholder{color:var(--steel)}
+  .interactive-table{border-collapse:separate;border-spacing:0 8px;margin:4px 0 12px}
+  .interactive-table thead th{padding:0 16px 8px}
+  .interactive-table tbody tr[data-interactive]{cursor:pointer;transition:box-shadow .15s ease,transform .15s ease}
+  .interactive-table tbody tr[data-interactive] td{padding:14px 16px;vertical-align:middle;background:rgba(255,255,255,.48);
+                                                     border-top:1px solid var(--grid);border-bottom:1px solid var(--grid)}
+  .interactive-table tbody tr[data-interactive] td:first-child{border-left:1px solid var(--grid)}
+  .interactive-table tbody tr[data-interactive] td:last-child{border-right:1px solid var(--grid)}
+  .interactive-table tbody tr[data-interactive]:not(.selected):hover{box-shadow:3px 3px 0 var(--ink);transform:translateY(-2px)}
+  .interactive-table tbody tr[data-interactive]:not(.selected):hover td{background:var(--white);border-color:var(--ink)}
+  .interactive-table tbody tr.selected td,.interactive-table tbody tr.selected:hover td{background:var(--rust-soft);color:var(--ink);border-color:var(--rust)}
+  .interactive-table tbody tr.selected:hover{box-shadow:none;transform:none}
+  .inline-detail-row td{padding:0;border-bottom:0;background:transparent!important}
+  .detail-reveal{display:grid;grid-template-rows:0fr;opacity:0;transform:translateY(-4px);
+                 transition:grid-template-rows .28s cubic-bezier(.2,.8,.2,1),opacity .18s ease,transform .28s cubic-bezier(.2,.8,.2,1)}
+  .detail-reveal-inner{min-height:0;overflow:hidden}
+  .inline-detail-row.open .detail-reveal{grid-template-rows:1fr;opacity:1;transform:translateY(0)}
+  [hidden]{display:none!important}
+  pre{background:var(--white);border:1.2px solid var(--ink-soft);padding:12px 14px;overflow-x:auto;margin:12px 0}
+  code{font-family:var(--mono);font-size:11.5px}
+  pre code{color:var(--ink);line-height:1.65}
+  p code,li code,td code{background:var(--white);border:1px solid var(--grid);padding:1px 5px;font-size:11px}
+  .c-red{color:var(--rust)} .c-grn{color:var(--good)} .c-amb{color:var(--warn)}
+  .c-blu{color:var(--ink-soft)} .c-dim{color:var(--steel)}
+  ol.steps{list-style:none;counter-reset:s;margin:12px 0}
+  ol.steps li{counter-increment:s;position:relative;padding-left:26px;margin-bottom:10px;
+              font-size:11.5px;line-height:1.65;color:var(--ink-soft)}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:17px;height:17px;line-height:17px;
+       text-align:center;border-radius:50%;background:var(--ink);color:var(--white);font-size:10px;font-weight:700}
+  ol.steps li b{display:block;color:var(--ink)}
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .lg{border:1.2px solid var(--steel);padding:12px}
+  .lg.hot{border-color:var(--rust)}
+  .lg h4{font-size:12px;letter-spacing:1px;margin-bottom:8px;color:var(--ink-soft)}
+  .lg.hot h4{color:var(--rust)}
+  .lg .item{font-size:11.5px;line-height:1.55;margin-bottom:7px;padding-left:22px;position:relative;color:var(--ink-soft)}
+  .lg .item b{position:absolute;left:0;top:0;width:16px;height:16px;line-height:16px;text-align:center;
+              border-radius:50%;font-size:10px;color:var(--white);background:var(--steel)}
+  .lg.hot .item b{background:var(--peach);color:var(--ink)}
+  .lg .item.on{color:var(--ink);font-weight:600}
+  .lg .item.on b{background:var(--rust);color:var(--white)}
+  .controls{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+  button{font-family:var(--mono);font-size:12px;padding:8px 16px;cursor:pointer;
+         background:var(--ink);color:var(--white);border:none;transition:all .15s}
+  button:hover{background:var(--rust)}
+  button.ghost{background:var(--white);color:var(--ink);border:1.2px solid var(--ink)}
+  button.ghost:hover{box-shadow:3px 3px 0 var(--ink)}
+  .dots{display:flex;gap:5px;margin-left:auto}
+  .dot{width:9px;height:9px;border:1px solid var(--ink);background:var(--white);cursor:pointer}
+  .dot.on{background:var(--rust);border-color:var(--rust)}
+  .dot.past{background:var(--ink-soft);border-color:var(--ink-soft)}
+  .foot{font-size:10px;color:var(--ink-soft);margin-top:16px;line-height:1.7;
+        border-top:1px solid var(--grid);padding-top:10px}
+  .app-shell{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start;width:100%;min-width:0}
+  .sidebar-slot{width:320px;min-width:0;transition:width .22s cubic-bezier(.2,.8,.2,1)}
+  .sidebar{width:320px;max-height:calc(100vh - 54px);position:sticky;top:16px;overflow-y:auto;
+           background:var(--white);border:1.2px solid var(--ink);padding:10px;transform:translateX(0);
+           transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+  .app-shell.nav-collapsed{gap:0}
+  .app-shell.nav-collapsed .sidebar-slot{width:0}
+  .app-shell.nav-collapsed .sidebar{transform:translateX(calc(-100% - 18px))}
+  .app-main{width:100%;min-width:0}
+  .sidebar-top,.nav-progress-head,.nav-topline{display:flex;align-items:center;gap:10px}
+  .sidebar-top{justify-content:space-between;border-bottom:1.2px solid var(--ink);padding-bottom:8px;margin-bottom:10px}
+  .sidebar-close{padding:5px 9px;line-height:1}
+  .nav-progress{border:1px solid var(--grid);background:var(--panel);padding:10px;margin-bottom:10px}
+  .nav-progress-head{justify-content:space-between;font-size:11px;margin-bottom:7px}
+  .nav-progress-head strong{color:var(--rust)}
+  .nav-progress-track{height:9px;background:var(--mut);border:1px solid var(--grid)}
+  .nav-progress-fill{height:100%;width:var(--progress);background:var(--rust)}
+  .nav-section{border-bottom:1.2px solid var(--ink);padding:6px 0;margin:10px 0 8px}
+  .nav-item{display:flex;align-items:center;gap:8px;text-align:left;width:100%;padding:9px 10px;margin-bottom:6px;
+            background:var(--white);border:1.2px solid var(--grid);color:var(--ink)}
+  .nav-item:hover{background:var(--white);border-color:var(--ink);color:var(--ink)}
+  .nav-item.active{background:var(--ink);border-color:var(--ink);color:var(--white)}
+  .nav-item .ic{color:var(--rust)}
+  .nav-item.active .ic{color:var(--peach)}
+  .nav-group{border:1px solid var(--grid);background:var(--white);margin-bottom:6px}
+  .nav-group.open{border-color:var(--ink)}
+  .nav-group-toggle{display:flex;align-items:flex-start;gap:8px;text-align:left;width:100%;padding:16px 12px;
+                    background:transparent;border:0;color:var(--ink)}
+  .nav-group-toggle:hover{background:var(--panel);color:var(--ink)}
+  .nav-arrow{color:var(--rust);font-size:10px;line-height:1.6}
+  .nav-copy{min-width:0;flex:1}
+  .nav-name{display:block;color:var(--ink);font-size:12.5px;font-weight:700;line-height:1.4}
+  .nav-group.done .nav-name{color:var(--good)}
+  .nav-sub{display:block;color:var(--ink-soft);font-size:10.5px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-count{color:var(--steel);font-size:11px;font-weight:700;white-space:nowrap}
+  .nav-count.hot{color:var(--rust)}
+  .nav-count.ok{color:var(--good)}
+  .nav-children{display:none;border-top:1px solid var(--grid);padding:8px}
+  .nav-group.open .nav-children{display:block}
+  .nav-child{display:grid;grid-template-columns:12px auto minmax(0,1fr);align-items:baseline;gap:6px;text-align:left;
+             width:100%;padding:16px 12px;background:transparent;border:0;color:var(--ink-soft);line-height:1.6}
+  .nav-child:hover{background:var(--mut);color:var(--ink)}
+  .nav-child.active{background:var(--rust-soft);color:var(--ink)}
+  .nav-mark{color:var(--steel)}
+  .nav-child.done .nav-mark{color:var(--good)}
+  .nav-order{color:var(--ink);font-weight:700;white-space:nowrap}
+  .nav-child.active .nav-order{color:var(--rust)}
+  .nav-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nav-topline{margin-bottom:12px}
+  .pill{border:1px solid var(--grid);background:var(--white);padding:6px 9px;font-size:10.5px;color:var(--ink-soft)}
+  .nav-scrim{display:none}
+  body.nav-lock{overflow:hidden}
+  @media(max-width:900px){
+    .app-shell{display:block}
+    .sidebar-slot{width:0}
+    .sidebar{position:fixed;z-index:60;top:0;bottom:0;left:0;width:min(320px,calc(100vw - 40px));max-height:none;
+             transform:translateX(-100%)}
+    .app-shell.nav-collapsed .sidebar{transform:translateX(-100%)}
+    .app-shell.nav-open .sidebar{transform:translateX(0)}
+    .nav-scrim{display:block;position:fixed;z-index:55;inset:0;background:rgba(27,42,65,.45)}
+  }
+  @media(max-width:660px){body{padding:8px}.sheet{padding:14px}.panel,.legend{grid-template-columns:1fr}
+    .interactive-table,.interactive-table tbody,.interactive-table tr,.interactive-table td{display:block;width:100%}
+    .interactive-table thead{display:none}
+    .interactive-table tbody tr[data-interactive]{border:1.2px solid var(--ink);background:var(--white);margin:10px 0;padding:12px}
+    .interactive-table tbody tr.selected{border-color:var(--rust)}
+    .interactive-table tbody tr[data-interactive] td{border:0!important;padding:6px 0;background:transparent!important}
+    .interactive-table tbody tr.inline-detail-row{border:0;background:transparent;padding:0;margin:0}
+    .interactive-table tbody tr.inline-detail-row.open{margin-bottom:16px}}
+  @media(prefers-reduced-motion:reduce){.tab,button,.filter-field,.interactive-table tbody tr[data-interactive],.detail-reveal,.sidebar-slot,.sidebar{transition:none}}
+
+  /* ===== COURSE ADDITIONS — token-only ===== */
+  .modhdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .modhdr .num{font-size:10px;letter-spacing:2px;font-weight:700;color:var(--rust)}
+  .modhdr h2{flex:1 1 240px;margin-bottom:0;border-bottom:0;padding-bottom:0;text-transform:none;letter-spacing:.6px;font-size:15px}
+  .modrule{border-bottom:1.2px solid var(--ink);margin:7px 0 4px}
+  .ask{font-size:11.5px;font-weight:700;color:var(--rust);border-left:2px solid var(--rust);
+       padding:2px 0 2px 10px;margin:12px 0;line-height:1.7}
+  button.ghost.is-done{border-color:var(--good);color:var(--good)}
+  .card{border:1.5px solid var(--ink);background:var(--white);min-height:230px;padding:34px 22px 30px;
+        display:flex;flex-direction:column;justify-content:center;cursor:pointer;position:relative}
+  .card.flipped{background:var(--rust-soft);border-color:var(--rust)}
+  .card .side{font-size:10px;letter-spacing:2px;font-weight:700;color:var(--steel);
+              position:absolute;top:12px;left:14px}
+  .card.flipped .side{color:var(--rust)}
+  .card .idx{font-size:10px;letter-spacing:1px;color:var(--steel);position:absolute;top:12px;right:14px}
+  .card .q{font-size:15px;font-weight:700;line-height:1.55;color:var(--ink)}
+  .card .a{font-size:13px;line-height:1.7;color:var(--ink);font-weight:700}
+  .card .why{margin-top:12px;font-size:11.5px;line-height:1.75;color:var(--ink-soft);font-weight:400}
+  .card .hint{position:absolute;bottom:11px;left:14px;font-size:10px;letter-spacing:1px;color:var(--steel)}
+  .deckbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;font-size:11px}
+  .deckbar .pill{font-weight:700}
+  .deckbar .pill.good{border-color:var(--good);color:var(--good)}
+  .deckbar .pill.hot{border-color:var(--rust);color:var(--rust)}
+  .q-block{border:1.2px solid var(--grid);background:var(--white);padding:14px;margin:12px 0}
+  .q-block.answered{border-color:var(--ink)}
+  .q-block .qn{font-size:10px;letter-spacing:2px;font-weight:700;color:var(--rust);margin-bottom:6px}
+  .q-block .qt{font-size:12.5px;font-weight:700;line-height:1.6;color:var(--ink);margin-bottom:10px}
+  .opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--grid);background:var(--panel);
+       padding:10px 12px;margin-bottom:7px;font-size:11.5px;line-height:1.6;color:var(--ink-soft);cursor:pointer;
+       transition:box-shadow .15s ease,transform .15s ease}
+  .opt:hover{box-shadow:3px 3px 0 var(--ink);transform:translateY(-2px);background:var(--white);color:var(--ink)}
+  .opt .letter{font-weight:700;color:var(--ink);min-width:16px}
+  .q-block.answered .opt{cursor:default;pointer-events:none;box-shadow:none;transform:none}
+  .opt.right{border-color:var(--good);background:var(--white);color:var(--ink)}
+  .opt.right .letter{color:var(--good)}
+  .opt.wrong{border-color:var(--rust);background:var(--rust-soft);color:var(--ink)}
+  .opt.wrong .letter{color:var(--rust)}
+  .verdict{margin-top:10px;font-size:11.5px;line-height:1.7;padding:10px 12px;border:1px dashed}
+  .verdict.ok{border-color:var(--good);background:var(--white);color:var(--ink)}
+  .verdict.no{border-color:var(--rust);background:var(--rust-soft);color:var(--ink)}
+  .verdict b{display:block;margin-bottom:4px}
+  .verdict .trap{margin-top:7px;color:var(--ink-soft)}
+  .score{border:1.5px solid var(--ink);background:var(--white);padding:16px;margin-top:14px}
+  .score .v{font-size:30px;font-weight:700;line-height:1.1}
+  .score .v.good{color:var(--good)} .score .v.mid{color:var(--warn)} .score .v.bad{color:var(--rust)}
+  @media(max-width:660px){.card{min-height:270px}}
+  @media(prefers-reduced-motion:reduce){.opt,.bar .fill,.nav-item,.nav-child{transition:none}}
+</style>
+</head>
+<body>
+<div class="sheet">
+<div class="app-shell" id="appShell">
+<div class="sidebar-slot">
+  <aside class="sidebar" id="sidebar" aria-label="Điều hướng khoá học">
+    <div class="sidebar-top">
+      <span class="k">MỤC LỤC KHOÁ HỌC</span>
+      <button class="ghost sidebar-close" id="navClose" type="button" aria-label="Đóng mục lục">×</button>
+    </div>
+    <div class="nav-progress">
+      <div class="nav-progress-head"><span>TIẾN ĐỘ</span><strong id="navProgCount">0/23</strong></div>
+      <div class="nav-progress-track"><div class="nav-progress-fill" id="navProgFill" style="--progress:0%"></div></div>
+    </div>
+    <button class="nav-item" type="button" data-target="overview"><span class="ic">◇</span>Tổng quan &amp; bảng từ</button>
+    <button class="nav-item" type="button" data-target="cards"><span class="ic">▤</span>Thẻ ghi nhớ · 24 thẻ</button>
+    <button class="nav-item" type="button" data-target="quiz"><span class="ic">▣</span>Trắc nghiệm · 16 câu</button>
+    <button class="nav-item" type="button" data-target="repo"><span class="ic">◉</span>Hiểu repo · 15 câu</button>
+    <div class="nav-section"><span class="k">6 MÔ-ĐUN · 23 BÀI</span></div>
+    <div class="nav-group" data-module="mod1">
+      <button class="nav-group-toggle" type="button" data-nav-group-toggle aria-expanded="false" aria-controls="mod1">
+        <span class="nav-arrow">▸</span>
+        <span class="nav-copy"><span class="nav-name">Mô-đun 01</span><span class="nav-sub">Bài 1.1–1.3 · Harness sinh ra để giải gì</span></span>
+        <span class="nav-count">0/3</span>
+      </button>
+      <div class="nav-children" id="mod1">
+        <button class="nav-child" type="button" data-target="l1-1" data-lesson="1-1"><span class="nav-mark">·</span><span class="nav-order">Bài 1.1</span><span class="nav-title">Hai bên lệch nhau — gốc của mọi vấn đề</span></button>
+        <button class="nav-child" type="button" data-target="l1-2" data-lesson="1-2"><span class="nav-mark">·</span><span class="nav-order">Bài 1.2</span><span class="nav-title">Giá trị mặc định không phải một quyết định</span></button>
+        <button class="nav-child" type="button" data-target="l1-3" data-lesson="1-3"><span class="nav-mark">·</span><span class="nav-order">Bài 1.3</span><span class="nav-title">Bằng chứng phải do chính người gánh rủi ro thực hiện được</span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-module="mod2">
+      <button class="nav-group-toggle" type="button" data-nav-group-toggle aria-expanded="false" aria-controls="mod2">
+        <span class="nav-arrow">▸</span>
+        <span class="nav-copy"><span class="nav-name">Mô-đun 02</span><span class="nav-sub">Bài 2.1–2.4 · Thang enforcement</span></span>
+        <span class="nav-count">0/4</span>
+      </button>
+      <div class="nav-children" id="mod2">
+        <button class="nav-child" type="button" data-target="l2-1" data-lesson="2-1"><span class="nav-mark">·</span><span class="nav-order">Bài 2.1</span><span class="nav-title">Bốn bậc, và biết mình đang ở bậc nào</span></button>
+        <button class="nav-child" type="button" data-target="l2-2" data-lesson="2-2"><span class="nav-mark">·</span><span class="nav-order">Bài 2.2</span><span class="nav-title">Thứ phải nằm mãi ở dạng prose</span></button>
+        <button class="nav-child" type="button" data-target="l2-3" data-lesson="2-3"><span class="nav-mark">·</span><span class="nav-order">Bài 2.3</span><span class="nav-title">Bậc 3 — phân tích, đừng kiểm tra</span></button>
+        <button class="nav-child" type="button" data-target="l2-4" data-lesson="2-4"><span class="nav-mark">·</span><span class="nav-order">Bài 2.4</span><span class="nav-title">Bậc 4 — schema chính là chính sách</span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-module="mod3">
+      <button class="nav-group-toggle" type="button" data-nav-group-toggle aria-expanded="false" aria-controls="mod3">
+        <span class="nav-arrow">▸</span>
+        <span class="nav-copy"><span class="nav-name">Mô-đun 03</span><span class="nav-sub">Bài 3.1–3.4 · Cơ chế của cổng</span></span>
+        <span class="nav-count">0/4</span>
+      </button>
+      <div class="nav-children" id="mod3">
+        <button class="nav-child" type="button" data-target="l3-1" data-lesson="3-1"><span class="nav-mark">·</span><span class="nav-order">Bài 3.1</span><span class="nav-title">Hỏng thì chặn, và cách kiểm chứng điều đó</span></button>
+        <button class="nav-child" type="button" data-target="l3-2" data-lesson="3-2"><span class="nav-mark">·</span><span class="nav-order">Bài 3.2</span><span class="nav-title">Ranh giới là một yêu cầu, không phải một phiên</span></button>
+        <button class="nav-child" type="button" data-target="l3-3" data-lesson="3-3"><span class="nav-mark">·</span><span class="nav-order">Bài 3.3</span><span class="nav-title">Trigger lệch phía — đừng làm chết công cụ</span></button>
+        <button class="nav-child" type="button" data-target="l3-4" data-lesson="3-4"><span class="nav-mark">·</span><span class="nav-order">Bài 3.4</span><span class="nav-title">Luật và enforcement phải tách rời</span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-module="mod4">
+      <button class="nav-group-toggle" type="button" data-nav-group-toggle aria-expanded="false" aria-controls="mod4">
+        <span class="nav-arrow">▸</span>
+        <span class="nav-copy"><span class="nav-name">Mô-đun 04</span><span class="nav-sub">Bài 4.1–4.3 · Bằng chứng, và cải tiến từ bằng chứng</span></span>
+        <span class="nav-count">0/3</span>
+      </button>
+      <div class="nav-children" id="mod4">
+        <button class="nav-child" type="button" data-target="l4-1" data-lesson="4-1"><span class="nav-mark">·</span><span class="nav-order">Bài 4.1</span><span class="nav-title">Vì sao phải ghi lại bất cứ thứ gì</span></button>
+        <button class="nav-child" type="button" data-target="l4-2" data-lesson="4-2"><span class="nav-mark">·</span><span class="nav-order">Bài 4.2</span><span class="nav-title">Bằng chứng có cấu trúc, không bao giờ là prose</span></button>
+        <button class="nav-child" type="button" data-target="l4-3" data-lesson="4-3"><span class="nav-mark">·</span><span class="nav-order">Bài 4.3</span><span class="nav-title">Vòng đời cải tiến, mổ từng phần</span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-module="mod5">
+      <button class="nav-group-toggle" type="button" data-nav-group-toggle aria-expanded="false" aria-controls="mod5">
+        <span class="nav-arrow">▸</span>
+        <span class="nav-copy"><span class="nav-name">Mô-đun 05</span><span class="nav-sub">Bài 5.1–5.5 · Đánh giá, quy mô, và biết lúc dừng</span></span>
+        <span class="nav-count">0/5</span>
+      </button>
+      <div class="nav-children" id="mod5">
+        <button class="nav-child" type="button" data-target="l5-1" data-lesson="5-1"><span class="nav-mark">·</span><span class="nav-order">Bài 5.1</span><span class="nav-title">Bản ghi quyết định không sửa lại</span></button>
+        <button class="nav-child" type="button" data-target="l5-2" data-lesson="5-2"><span class="nav-mark">·</span><span class="nav-order">Bài 5.2</span><span class="nav-title">Quy mô suy ra từ việc người dùng là ai</span></button>
+        <button class="nav-child" type="button" data-target="l5-3" data-lesson="5-3"><span class="nav-mark">·</span><span class="nav-order">Bài 5.3</span><span class="nav-title">Cuộc rút lui — máy móc phải liên tục xứng đáng</span></button>
+        <button class="nav-child" type="button" data-target="l5-4" data-lesson="5-4"><span class="nav-mark">·</span><span class="nav-order">Bài 5.4</span><span class="nav-title">Bốn lỗi chỉ tự dùng sản phẩm mới tìm ra</span></button>
+        <button class="nav-child" type="button" data-target="l5-5" data-lesson="5-5"><span class="nav-mark">·</span><span class="nav-order">Bài 5.5</span><span class="nav-title">Thứ tự dựng — làm gì trước</span></button>
+      </div>
+    </div>
+    <div class="nav-group" data-module="mod6">
+      <button class="nav-group-toggle" type="button" data-nav-group-toggle aria-expanded="false" aria-controls="mod6">
+        <span class="nav-arrow">▸</span>
+        <span class="nav-copy"><span class="nav-name">Mô-đun 06</span><span class="nav-sub">Bài 6.1–6.4 · repository-harness: mindset, kỹ thuật, cách dùng</span></span>
+        <span class="nav-count">0/4</span>
+      </button>
+      <div class="nav-children" id="mod6">
+        <button class="nav-child" type="button" data-target="l6-1" data-lesson="6-1"><span class="nav-mark">·</span><span class="nav-order">Bài 6.1</span><span class="nav-title">Mindset: repo là nguồn sự thật, không phải prompt dài hơn</span></button>
+        <button class="nav-child" type="button" data-target="l6-2" data-lesson="6-2"><span class="nav-mark">·</span><span class="nav-order">Bài 6.2</span><span class="nav-title">Kỹ thuật dựng: contract test biến tài liệu thành thứ chặn được</span></button>
+        <button class="nav-child" type="button" data-target="l6-3" data-lesson="6-3"><span class="nav-mark">·</span><span class="nav-order">Bài 6.3</span><span class="nav-title">Dùng thế nào: bốn hình dạng công việc</span></button>
+        <button class="nav-child" type="button" data-target="l6-4" data-lesson="6-4"><span class="nav-mark">·</span><span class="nav-order">Bài 6.4</span><span class="nav-title">Dùng thế nào: cập nhật, và chỗ nó cố tình dừng lại</span></button>
+      </div>
+    </div>
+  </aside>
+</div>
+<div class="nav-scrim" id="navScrim" hidden></div>
+<main class="content app-main">
+
+  <div class="nav-topline">
+    <button class="ghost" id="navToggle" type="button" aria-controls="sidebar" aria-expanded="true">☰ MỤC LỤC</button>
+    <span class="pill" id="viewPill">Tổng quan</span>
+  </div>
+
+  <h1>Harness cho AI Agent — khoá học</h1>
+  <div class="sub">23 bài · 24 thẻ ghi nhớ · 31 câu trắc nghiệm. Rút từ hai bản triển khai đang chạy thật.</div>
+  <div class="meta">
+    <span><b>NGUỒN A</b> hoangnb24/repository-harness · 21.178 dòng Rust · 16 bảng</span>
+    <span><b>NGUỒN B</b> mantrandev/mkit v1.4.1 · 790 dòng Rust · 30 test</span>
+    <span><b>ĐỌC NGÀY</b> 17-08-2026 · <span class="ok">từ mã nguồn, không từ trí nhớ</span></span>
+  </div>
+
+  <section data-view="overview" hidden>
+    <h2>Cách dùng trang này</h2>
+    <p>Khoá học chia làm 23 bài, mỗi bài là một trang riêng. Chọn bài ở mục lục bên trái,
+    đọc xong thì bấm <b>Đánh dấu xong</b> ở cuối trang — tiến độ hiện ngay trên mục lục và chỉ lưu trong
+    trình duyệt này.</p>
+    <ol class="steps">
+      <li><b>Đọc theo thứ tự mô-đun.</b> Mỗi mô-đun mở ra bằng một câu hỏi, các bài trong đó là câu trả lời.</li>
+      <li><b>Quay lại bảng tra cứu.</b> 12 kỹ thuật bên dưới đều trỏ về đúng bài giải thích nó.</li>
+      <li><b>Lật thẻ ghi nhớ sau mỗi mô-đun.</b> Chấm thật thà; thẻ khó mới đáng làm lần hai.</li>
+      <li><b>Làm hai bài trắc nghiệm cuối cùng.</b> Bài đầu kiểm kỹ thuật harness nói chung, bài sau chỉ hỏi về repository-harness.</li>
+    </ol>
+    <div class="controls">
+      <button class="ghost" id="resetProg">Xoá tiến độ</button>
+    </div>
+  </section>
+
+  <section data-view="overview" hidden>
+      <h2>Bảng từ — đọc cái này trước</h2>
+      <p>Mấy từ dưới đây để nguyên tiếng Anh vì dịch ra thì mất nghĩa hoặc thành khó hiểu hơn.
+      Không cần thuộc, chỉ cần quay lại tra khi gặp.</p>
+      <table>
+        <thead><tr><th>Từ</th><th>Nghĩa trong tài liệu này</th></tr></thead>
+        <tbody>
+          <tr><td><b>harness</b></td><td>Bộ máy chặn agent tự ý dùng quyền của người. Dịch là “bộ khung” hay “dây cương” đều sai nghĩa nên để nguyên.</td></tr>
+          <tr><td><b>gate</b></td><td>Chốt chặn đặt trước một hành động. Qua thì cho chạy, không qua thì huỷ luôn hành động đó.</td></tr>
+          <tr><td><b>hook</b></td><td>Điểm móc mà công cụ tự gọi trước hoặc sau một hành động. Đây là chỗ rẻ nhất để gắn gate.</td></tr>
+          <tr><td><b>enforce</b> / <b>enforcement</b></td><td>Bắt một luật phải xảy ra <b>bằng máy</b>, không phải bằng lời nhắc. Ngược với “chỉ ghi trong tài liệu”.</td></tr>
+          <tr><td><b>prose</b></td><td>Luật viết bằng chữ trong tài liệu, không có gì kiểm tự động. Bậc thấp nhất của thang enforcement.</td></tr>
+          <tr><td><b>schema</b></td><td>Ràng buộc do chính nơi lưu dữ liệu áp. Code có thể đi vòng, schema thì không.</td></tr>
+          <tr><td><b>invariant</b></td><td>Điều luôn phải đúng. Ví dụ: “lớp trong không được gọi ra lớp ngoài”.</td></tr>
+          <tr><td><b>fail closed</b> / <b>fail open</b></td><td>Hỏng thì chặn / hỏng thì cho qua. Chọn cái nào là một quyết định, không phải mặc định.</td></tr>
+          <tr><td><b>three-way merge</b></td><td>Gộp bằng cách so <b>ba</b> bản: bản gốc, bản bạn sửa, bản mới về. Không có bản gốc thì mọi khác biệt đều thành xung đột.</td></tr>
+          <tr><td><b>BASE / LOCAL / UPSTREAM / RESOLVED</b></td><td>Bốn bản văn bản giữ lại khi merge dừng: bản gốc, bản của bạn, bản mới, và bản bạn tự gộp tay.</td></tr>
+          <tr><td><b>control plane</b></td><td>Chỗ chứa trạng thái điều khiển nằm <b>ngoài</b> repo — task database, hàng đợi, vòng đời task. Repo này cố tình không có.</td></tr>
+          <tr><td><b>ledger</b></td><td>Sổ ghi bằng chứng, chỉ được thêm dòng mới chứ không sửa dòng cũ.</td></tr>
+          <tr><td><b>read-only</b></td><td>Chỉ đọc: không sửa file, không cài công cụ, không khởi động service.</td></tr>
+          <tr><td><b>upstream</b></td><td>Repo gốc mà bạn fork ra hoặc cài từ đó.</td></tr>
+          <tr><td><b>quyền quyết định</b></td><td>Ai được phép chốt một lựa chọn. Bản gốc tiếng Anh là <i>authority</i>. Giá trị mặc định của thư viện <b>không</b> phải quyền quyết định.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  <section data-view="overview" hidden>
+      <h2>Tra cứu nhanh — 12 kỹ thuật</h2>
+      <p>Bảng này để quay lại sau khi đã học. Mỗi kỹ thuật gắn với bài giải thích nó.</p>
+      <table>
+        <thead><tr><th>#</th><th>Kỹ thuật</th><th>Chặn được điều gì</th><th>Bài</th></tr></thead>
+        <tbody>
+          <tr><td>01</td><td><b>Việc nào phải hỏi người, không được tự quyết</b><br><code>authority gate</code></td><td>Agent tự bịa chính sách</td><td>1.2</td></tr>
+          <tr><td>02</td><td><b>Hỏng thì chặn, không cho đi tiếp</b><br><code>fail closed</code></td><td>Gặp lỗi nhưng vẫn cho đi tiếp</td><td>3.1</td></tr>
+          <tr><td>03</td><td><b>Mỗi yêu cầu phải xin phép lại</b></td><td>Một lần đồng ý dùng cho mọi việc về sau</td><td>3.2</td></tr>
+          <tr><td>04</td><td><b>Chỉ chặn agent, không chặn người dùng</b></td><td>Rào chắn chặn nhầm cả người dùng</td><td>3.3</td></tr>
+          <tr><td>05</td><td><b>Máy làm phần chắc chắn, người làm phần phải cân nhắc</b></td><td>Chương trình giả vờ hiểu ngữ nghĩa</td><td>2.2</td></tr>
+          <tr><td>06</td><td><b>Luật viết một nơi, chỗ kiểm tra để một nơi</b></td><td>Hai nguồn sự thật trôi khỏi nhau</td><td>3.4</td></tr>
+          <tr><td>07</td><td><b>Dựng kiểu dữ liệu không chứa được giá trị sai</b><br><code>parse, don't validate</code></td><td>Kiểm một lần rồi lớp sau quên kiểm</td><td>2.3</td></tr>
+          <tr><td>08</td><td><b>Đưa luật xuống thành ràng buộc của database</b><br><code>schema as policy</code></td><td>Luật chỉ tồn tại trên giấy</td><td>2.4</td></tr>
+          <tr><td>09</td><td><b>Chỉ ghi nhãn và số đếm, không ghi nguyên văn</b></td><td>Khoá API lọt vào file không ai đọc</td><td>4.2</td></tr>
+          <tr><td>10</td><td><b>Quyết định cũ chỉ được thay bằng bản mới, không được sửa</b><br><code>superseded, not edited</code></td><td>Lịch sử bị viết lại cho khớp hiểu biết hôm nay</td><td>5.1</td></tr>
+          <tr><td>11</td><td><b>Viết kịch bản để người chủ tự kiểm chứng</b></td><td>Bằng chứng mà người chủ không tự kiểm được</td><td>1.3</td></tr>
+          <tr><td>12</td><td><b>Cải tiến dựa trên bằng chứng đã ghi lại</b></td><td>Sửa thứ mình thấy bực thay vì thứ thật sự hỏng</td><td>4.3</td></tr>
+        </tbody>
+      </table>
+    </section>
+  <section data-view="l1-1" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 01 · BÀI 1.1</span><h2>Hai bên lệch nhau — gốc của mọi vấn đề</h2></div>
+    <div class="modrule"></div>
+
+        <p>Agent lập trình thì <b>giỏi, nhanh, và không chịu trách nhiệm</b>. Nó tạo ra kết quả cho mọi
+        yêu cầu, kể cả yêu cầu nó hiểu sai. Nó không bao giờ nói "việc này không thuộc quyền quyết định của
+        tôi". Chỗ nào thiếu thông tin, nó điền giá trị hợp lý nhất — và một khi giá trị đó nằm trong mã
+        nguồn thì không ai phân biệt được nó do người chọn hay do máy đoán.</p>
+        <p>Người ở đầu bên kia thì <b>chậm, có quyền quyết định, và thường không kiểm chứng được</b>. Họ gánh
+        hậu quả của mọi con số trong hệ thống, nhưng không đọc nổi đoạn mã chứa con số đó.</p>
+        <div class="ask">Harness không phải một prompt dài hơn. Nó là tập hợp các <b>cơ chế</b> ngăn agent
+        âm thầm dùng quyền quyết định vốn thuộc về một con người.</div>
+        <p>Cách kiểm tra bạn có harness thật hay không: <b>một vi phạm có thể xảy ra mà không ai biết
+        không?</b> Nếu có, thứ bạn đang có là tài liệu.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="1-1">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l1-2" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 01 · BÀI 1.2</span><h2>Giá trị mặc định không phải một quyết định</h2></div>
+    <div class="modrule"></div>
+
+        <p>Giới hạn 20 lần một phút? Phiên hết hạn sau 30 ngày? Thử lại 3 lần? Thư viện nào cũng có sẵn
+        giá trị mặc định, và lấy nó về dùng có cảm giác như đang làm kỹ thuật chứ không phải đang quyết
+        định. Nhưng đó là quyết định. <b>Không ai chọn con số đó cả</b>, và coi nó như đã chốt là mạo
+        danh quyền quyết định của người dùng.</p>
+        <p>Vì vậy cả hai harness đều giữ một danh sách ngắn, cố định, những nhóm mà agent phải dừng lại
+        chứ không được tự chọn. mkit dùng sáu:</p>
+        <table>
+          <thead><tr><th>#</th><th>Nhóm</th><th>Hay nguỵ trang thành</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><b>Số và ngưỡng</b></td><td>"giới hạn thông thường"</td></tr>
+            <tr><td>2</td><td><b>Tiền</b></td><td>"làm tròn cho chuẩn"</td></tr>
+            <tr><td>3</td><td><b>Dữ liệu cá nhân</b></td><td>"đằng nào cũng ghi log"</td></tr>
+            <tr><td>4</td><td><b>Xoá không lấy lại được</b></td><td>"dọn dẹp thôi"</td></tr>
+            <tr><td>5</td><td><b>Gọi bên thứ ba</b></td><td>"chỉ là một API"</td></tr>
+            <tr><td>6</td><td><b>Quyền</b></td><td>"admin thì làm gì cũng được"</td></tr>
+          </tbody>
+        </table>
+        <div class="flag">Danh sách thì kiểm được bằng máy và chỉ phải tranh luận một lần. Còn để agent tự đánh giá —
+        "dừng khi thấy quan trọng" — thì sẽ bị thương lượng cho biến mất mỗi khi có deadline.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="1-2">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l1-3" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 01 · BÀI 1.3</span><h2>Bằng chứng phải do chính người gánh rủi ro thực hiện được</h2></div>
+    <div class="modrule"></div>
+
+        <p>"23 test đã pass" là câu người không đọc được code không có cách nào bác bỏ, nhưng nó
+        <i>nghe</i> y hệt bằng chứng. Chính chỗ lệch đó là chỗ nguy hiểm: câu nói mang uy quyền
+        của một chứng minh mà không kèm khả năng kiểm chứng.</p>
+        <p>Thay bằng <b>kịch bản nghiệm thu</b> — chuỗi thao tác người chủ tự làm, kèm thứ họ phải thấy:</p>
+        <pre><code>Mở localhost:3000/sign-up, nhập email bất kỳ, bấm Submit 21 lần.
+Lần thứ 21 phải hiện <span class="c-grn">"Try again in 1 minute"</span>.</code></pre>
+        <div class="ask">Tác dụng thứ hai: đây là ràng buộc thiết kế, không phải kiểu báo cáo. Viết không
+        nổi kịch bản đó nghĩa là bạn chưa tạo ra thứ họ chạm được — và phải nói thẳng thay vì tuyên bố
+        hoàn thành.</div>
+        <p>Cùng quy tắc đó dùng làm điều kiện thoát cho vòng làm rõ yêu cầu: một yêu cầu là rõ khi viết
+        được kịch bản nghiệm thu cho nó. Chưa viết được thì chưa hiểu. Hỏi tiếp.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="1-3">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l2-1" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 02 · BÀI 2.1</span><h2>Bốn bậc, và biết mình đang ở bậc nào</h2></div>
+    <div class="modrule"></div>
+
+        <p>Mọi luật đều nằm ở một bậc trên thang này. Kỹ năng cốt lõi là biết luật của mình ở bậc nào, và
+        chủ động đưa những luật chịu lực lên cao.</p>
+        <div class="stage-wrap">
+          <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+            <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0L10 5L0 10z" fill="#4A5A6E"/></marker></defs>
+            <text class="lanehdr" x="30" y="28">BẬC</text>
+            <text class="lanehdr" x="300" y="28">CƠ CHẾ</text>
+            <text class="lanehdr" x="640" y="28">BỎ QUA ĐƯỢC?</text>
+            <path class="divider" d="M20 40 L880 40"/>
+            <g class="node"><rect x="20" y="56" width="250" height="52" rx="2"/>
+              <text class="lbl" x="34" y="80">1 · PROSE</text><text class="sub2" x="34" y="97">một câu trong AGENTS.md</text></g>
+            <path class="edge" d="M270 82 L330 82" marker-end="url(#ar)"/>
+            <g class="node"><rect x="330" y="56" width="270" height="52" rx="2"/>
+              <text class="lbl" x="344" y="80">model đọc nó</text><text class="sub2" x="344" y="97">tuân thủ là tự nguyện</text></g>
+            <text x="640" y="87" font-size="12" font-weight="700" fill="#C1440E">ĐƯỢC — âm thầm</text>
+            <g class="node"><rect x="20" y="124" width="250" height="52" rx="2"/>
+              <text class="lbl" x="34" y="148">2 · TẦNG CÔNG CỤ</text><text class="sub2" x="34" y="165">hook PreToolUse, thoát 2</text></g>
+            <path class="edge" d="M270 150 L330 150" marker-end="url(#ar)"/>
+            <g class="node active"><rect x="330" y="124" width="270" height="52" rx="2"/>
+              <text class="lbl" x="344" y="148">lệnh ghi bị huỷ</text><text class="sub2" x="344" y="165">mkit-gate check</text></g>
+            <text x="640" y="155" font-size="12" font-weight="700" fill="#2E7D5B">KHÔNG</text>
+            <g class="node"><rect x="20" y="192" width="250" height="52" rx="2"/>
+              <text class="lbl" x="34" y="216">3 · KIỂU DỮ LIỆU</text><text class="sub2" x="34" y="233">phân tích, đừng kiểm tra</text></g>
+            <path class="edge" d="M270 218 L330 218" marker-end="url(#ar)"/>
+            <g class="node active"><rect x="330" y="192" width="270" height="52" rx="2"/>
+              <text class="lbl" x="344" y="216">giá trị sai không tồn tại được</text><text class="sub2" x="344" y="233">RelativePath::parse</text></g>
+            <text x="640" y="223" font-size="12" font-weight="700" fill="#2E7D5B">KHÔNG</text>
+            <g class="node"><rect x="20" y="260" width="250" height="52" rx="2"/>
+              <text class="lbl" x="34" y="284">4 · LƯU TRỮ</text><text class="sub2" x="34" y="301">CHECK, UNIQUE, TRIGGER</text></g>
+            <path class="edge" d="M270 286 L330 286" marker-end="url(#ar)"/>
+            <g class="node active"><rect x="330" y="260" width="270" height="52" rx="2"/>
+              <text class="lbl" x="344" y="284">hàng sai không ghi được</text><text class="sub2" x="344" y="301">unique index có điều kiện</text></g>
+            <text x="640" y="291" font-size="12" font-weight="700" fill="#2E7D5B">KHÔNG</text>
+          </svg>
+        </div>
+        <div class="flag hot">Kỷ luật ở đây <b>không</b> phải "đưa tất cả vào code". Một luật để nguyên
+        dạng prose là một luật bạn đã chọn không enforce — mục tiêu là chọn điều đó một cách có ý
+        thức, chứ không phải do vô tình.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="2-1">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l2-2" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 02 · BÀI 2.2</span><h2>Thứ phải nằm mãi ở dạng prose</h2></div>
+    <div class="modrule"></div>
+
+        <p>Ba thứ không bao giờ leo lên được, và cố leo thì hệ thống tệ đi:</p>
+        <ol class="steps">
+          <li><b>Việc đánh giá ý nghĩa.</b> "Yêu cầu này có chạm tới tiền không?" là câu hỏi ngữ nghĩa. Chương trình
+          đoán thì sai cả hai chiều, mà một cái cổng chặn nhầm sẽ bị chính người bị làm phiền tắt đi.</li>
+          <li><b>Gu.</b> Đặt tên, chia mô-đun, xây tới đâu là đủ.</li>
+          <li><b>Chỗ mà chặn nhầm đắt hơn cho lọt.</b> Quyết định nằm ở chỗ chi phí hai bên lệch nhau, không
+          nằm ở mức độ quan trọng của luật.</li>
+        </ol>
+        <div class="ask">Nên cách chia là: <b>model đánh giá, chương trình enforce rằng việc đánh giá đó
+        đã xảy ra.</b> Enforcement thành tuyệt đối, dù bản thân đánh giá vẫn có thể sai.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="2-2">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l2-3" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 02 · BÀI 2.3</span><h2>Bậc 3 — phân tích, đừng kiểm tra</h2></div>
+    <div class="modrule"></div>
+
+        <p>Thay vì kiểm tra một giá trị rồi truyền tiếp kiểu gốc, hãy dựng một kiểu dữ liệu không thể chứa
+        giá trị sai. Sau khi khởi tạo thì không cần kiểm gì nữa, và cũng không kiểm được.</p>
+        <pre><code><span class="c-dim">// repository-harness · crates/harness/src/domain/model.rs</span>
+<span class="c-blu">pub struct</span> RelativePath(String);
+
+<span class="c-blu">pub fn</span> parse(value: <span class="c-blu">impl</span> Into&lt;String&gt;) -&gt; Result&lt;Self, DomainError&gt; {
+  <span class="c-blu">let</span> invalid = value.is_empty()
+    || value.starts_with(<span class="c-grn">'/'</span>)
+    || value.contains(<span class="c-grn">'\0'</span>)
+    || value.split(<span class="c-grn">'/'</span>).any(|c| c == <span class="c-grn">".."</span>);
+  <span class="c-blu">if</span> invalid { <span class="c-blu">return</span> Err(DomainError::InvalidRelativePath(value)); }
+  Ok(Self(value))
+}</code></pre>
+        <p>Vì sao điều này đặc biệt quan trọng <i>trong harness</i>: mã do agent viết chảy qua rất nhiều
+        lớp. Một chuỗi "đã kiểm" vẫn chỉ là chuỗi, và ba hàm sau có người dùng nó mà không kiểm lại. Kiểu
+        đã phân tích thì <b>mang theo bảo đảm của nó đi khắp nơi</b>.</p>
+        <p>Cũng trong file đó, <code>ContentHash</code> từ chối mọi thứ không phải đúng 64 ký tự hex viết
+        thường. Cầm được một cái trên tay thì nó chắc chắn đúng — không phải vì đã kiểm, mà vì <b>không
+        tạo ra được cái sai</b>.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="2-3">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l2-4" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 02 · BÀI 2.4</span><h2>Bậc 4 — schema chính là chính sách</h2></div>
+    <div class="modrule"></div>
+
+        <p>Code enforce một luật thì có thể bị code khác đi vòng. Một ràng buộc thì được chính engine lưu
+        trữ áp cho mọi người ghi, mãi mãi, kể cả người viết code năm sau.</p>
+        <p>Decision 0008 của repository-harness có một câu tiếng Anh — <i>"a second open occurrence cannot
+        be created"</i>. Câu đó tồn tại về mặt vật lý dưới dạng một dòng SQL:</p>
+        <pre><code><span class="c-blu">CREATE UNIQUE INDEX</span> backlog_one_open_proposal_key
+  <span class="c-blu">ON</span> backlog(proposal_key)
+  <span class="c-blu">WHERE</span> proposal_key <span class="c-blu">IS NOT NULL</span>
+    <span class="c-blu">AND</span> status <span class="c-blu">IN</span> (<span class="c-grn">'proposed'</span>,<span class="c-grn">'accepted'</span>);
+
+<span class="c-dim">-- từ vựng đóng: không ghi được kết quả thứ năm</span>
+outcome <span class="c-blu">TEXT CHECK</span>(outcome <span class="c-blu">IN</span> (<span class="c-grn">'completed'</span>,<span class="c-grn">'blocked'</span>,<span class="c-grn">'partial'</span>,<span class="c-grn">'failed'</span>))</code></pre>
+        <div class="flag">Đọc lại cái index: nó là unique <b>có điều kiện</b>. Tính duy nhất chỉ áp dụng khi
+        hàng còn mở. Hàng đã đóng thì lặp lại được. Câu tiếng Anh và dòng SQL là cùng một luật.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="2-4">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l3-1" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 03 · BÀI 3.1</span><h2>Hỏng thì chặn, và cách kiểm chứng điều đó</h2></div>
+    <div class="modrule"></div>
+
+        <p>Mọi đường lỗi đều từ chối. Mất file trạng thái, bản ghi đọc không được, dữ liệu vào méo, không ở
+        trong repo, không xác định được danh tính — tất cả đều chặn.</p>
+        <pre><code>chưa mở lượt nào                <span class="c-red">-&gt; chặn</span>
+bản ghi cổng đọc không được     <span class="c-red">-&gt; chặn</span>
+bản ghi thuộc về lượt cũ        <span class="c-red">-&gt; chặn</span>
+không nằm trong repo nào        <span class="c-red">-&gt; chặn</span>
+thư mục trạng thái bị xoá       <span class="c-red">-&gt; chặn</span></code></pre>
+        <div class="ask">Một cái chốt mà lúc bối rối thì cho qua còn tệ hơn không có chốt: nó tạo ra cảm
+        giác được bảo vệ mà không có sự thật đó, và nó hỏng đúng vào lúc mọi thứ vốn đã sai.</div>
+        <p><b>Làm sao biết mình thật sự có nó.</b> Viết test cố tình phá hỏng trạng thái rồi khẳng định là
+        vẫn bị chặn. Bộ test chỉ chạy đường thuận và tham số sai thì chưa kiểm gì cả.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="3-1">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l3-2" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 03 · BÀI 3.2</span><h2>Ranh giới là một yêu cầu, không phải một phiên</h2></div>
+    <div class="modrule"></div>
+
+        <p>Phê duyệt chỉ có hiệu lực cho đúng một yêu cầu của người dùng. Yêu cầu mới tự động xoá phê duyệt
+        cũ.</p>
+        <pre><code>người dùng nói  <span class="c-blu">-&gt;</span> gate turn      <span class="c-dim">mã lượt mới, xoá phê duyệt cũ</span>
+agent đánh giá  <span class="c-blu">-&gt;</span> gate declare   <span class="c-dim">ghi lại câu trả lời</span>
+agent sửa file  <span class="c-blu">-&gt;</span> gate check     <span class="c-dim">chỉ cho qua với ĐÚNG mã lượt này</span></code></pre>
+        <div class="flag hot">Phê duyệt theo phiên là lỗi kinh điển: qua cổng một lần cho việc vô hại, rồi
+        hai tiếng sau sửa phần thanh toán dưới cùng cái phê duyệt đó.</div>
+        <p>Cách làm là để công cụ nói cho bạn biết ranh giới nằm đâu. Khoảnh khắc người dùng gửi một câu
+        <i>chính là</i> ranh giới, nên hook <code>UserPromptSubmit</code> mở lượt mới và xoá phê duyệt cũ.
+        Không đoạn mã nào phải đoán.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="3-2">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l3-3" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 03 · BÀI 3.3</span><h2>Trigger lệch phía — đừng làm chết công cụ</h2></div>
+    <div class="modrule"></div>
+
+        <p>Bài này học bằng cách vấp. Hook <code>UserPromptSubmit</code> mà thoát khác 0 sẽ <b>chặn luôn
+        câu nói của người dùng</b>. Nếu lệnh mở lượt thất bại khi không ở trong repo git, cài harness ở
+        cấu hình toàn cục sẽ khiến mọi thư mục không phải repo không nói chuyện được với agent nữa.</p>
+        <div class="panel">
+          <div class="desc">
+            <div class="k">◉ TURN — HỖ TRỢ</div><h3>Không bao giờ chặn</h3>
+            <p>Không tìm thấy repo? Thoát 0, không làm gì. Ở đây không có gì để bảo vệ.</p>
+            <div class="cost">AN TOÀN KHÔNG ĐỔI · check vẫn chặn độc lập</div>
+          </div>
+          <div class="mind">
+            <div class="k">▣ CHECK — NGHIÊM</div><h3>Nghi ngờ là chặn</h3>
+            <p>Bất kỳ điều gì không chắc chắn cũng đồng nghĩa file không được ghi.</p>
+            <div class="cost">THOÁT 2 · lệnh của công cụ bị huỷ</div>
+          </div>
+        </div>
+        <div class="flag hot">Quy luật chung: một thành phần có thể chặn <b>con người</b> thuộc hạng rủi ro
+        khác hẳn thành phần chặn <b>agent</b>. Đừng bao giờ cho hai cái cùng chính sách khi hỏng.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="3-3">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l3-4" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 03 · BÀI 3.4</span><h2>Luật và enforcement phải tách rời</h2></div>
+    <div class="modrule"></div>
+
+        <p>Nội dung luật nằm trong markdown và chỉ ở đó. Binary chỉ biết sáu cái <i>nhãn</i>; nó không biết
+        chúng nghĩa là gì. Ngay khi một luật tồn tại ở hai nơi, chúng sẽ lệch nhau và không ai nói được
+        bên nào mới đúng.</p>
+        <pre><code><span class="c-dim">// test sẽ fail nếu chữ nghĩa của luật lọt vào chương trình</span>
+<span class="c-blu">for</span> phrase <span class="c-blu">in</span> [<span class="c-grn">"Numbers and thresholds"</span>, <span class="c-grn">"Irreversible deletion"</span>, ...] {
+  assert!(!source.contains(phrase),
+    <span class="c-grn">"rule text leaked into the binary; rules belong in core/AGENTS.block.md"</span>);
+}</code></pre>
+        <div class="ask">Để ý bản chất của cái test này: nó là một luật <i>về</i> harness, được enforce ở
+        bậc 2 trên chính thang của harness. Kỷ luật áp lên chính nó.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="3-4">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l4-1" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 04 · BÀI 4.1</span><h2>Vì sao phải ghi lại bất cứ thứ gì</h2></div>
+    <div class="modrule"></div>
+
+        <p>"Agent cứ hiểu nhầm lệnh này" là một cảm giác. "Người dùng đòi giải thích lại sau 14 trên 31 lần
+        chạy <code>implement</code>" là một sự kiện bạn hành động được.</p>
+        <p>repository-harness ghi bằng máy: bảng <code>trace</code> có cột <code>harness_friction</code>,
+        bảng <code>intervention</code> với từ vựng đóng gồm
+        <code>correction / override / escalation / approval</code>, cộng các phát hiện kiểm toán. Một lệnh
+        dựa trên quy tắc biến bằng chứng lặp lại thành đề xuất.</p>
+        <div class="flag">Bộ sinh đề xuất <b>dựa trên quy tắc, không phải model</b>. Tái lập được và kiểm
+        toán được quan trọng hơn thông minh — bạn phải giải thích được vì sao một đề xuất xuất hiện.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="4-1">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l4-2" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 04 · BÀI 4.2</span><h2>Bằng chứng có cấu trúc, không bao giờ là prose</h2></div>
+    <div class="modrule"></div>
+
+        <p>Bản ghi nằm trong chính repo của người dùng, trong một file họ không đọc được, và có thể bị công
+        khai. Một bản ghi chứa câu người dùng gõ sẽ mang khoá API và dữ liệu khách hàng vào lịch sử git
+        vĩnh viễn.</p>
+        <p>Mà các câu hỏi cải tiến không hề cần văn bản đó — chúng cần số đếm và nhãn.</p>
+        <pre><code>$ gate log --kind ha --tags <span class="c-grn">"sk-proj-8Kd9SECRETkey"</span>   <span class="c-red">từ chối</span>
+$ gate log --kind ha --tags <span class="c-grn">"hello world"</span>            <span class="c-red">từ chối</span>
+$ gate log --kind ha --tags <span class="c-grn">"src/billing/charge.ts"</span>  <span class="c-red">từ chối</span>
+$ gate log --kind ha --after implement                <span class="c-grn">ok</span>
+
+{<span class="c-grn">"ts"</span>:1786952871,<span class="c-grn">"mkit"</span>:<span class="c-grn">"1.4.1"</span>,<span class="c-grn">"agent"</span>:<span class="c-grn">"claude"</span>,
+ <span class="c-grn">"kind"</span>:<span class="c-grn">"gate"</span>,<span class="c-grn">"decision"</span>:<span class="c-grn">"0014"</span>,<span class="c-grn">"touches"</span>:[<span class="c-grn">"personal-data"</span>]}</code></pre>
+        <div class="flag hot">Từ chối chứ đừng lọc. Bộ lọc là một lời hứa rằng danh sách mẫu của bạn đã đầy
+        đủ; từ chối thì không cần lời hứa nào.</div>
+        <p>Hai luật đi kèm: một lần bị chặn chỉ ghi <b>một dòng cho mỗi yêu cầu</b> dù agent thử lại bao
+        nhiêu lần, để nó không làm ngập file; và ghi thất bại thì <b>không bao giờ chặn việc sửa file</b> —
+        quan sát không được vô tình biến thành enforcement.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="4-2">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l4-3" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 04 · BÀI 4.3</span><h2>Vòng đời cải tiến, mổ từng phần</h2></div>
+    <div class="modrule"></div>
+
+        <table>
+          <thead><tr><th>Bộ phận</th><th>Thiếu nó thì</th></tr></thead>
+          <tbody>
+            <tr><td><b>Ghi ma sát bằng máy</b></td><td>Bạn sửa thứ bạn nhớ là đã bực mình</td></tr>
+            <tr><td><b>Đề xuất theo quy tắc</b></td><td>Gợi ý không ai tái lập hay kiểm toán được</td></tr>
+            <tr><td><b>Mặc định chỉ đọc</b></td><td>Hệ thống tự sửa chính nó mà không ai đồng ý</td></tr>
+            <tr><td><b>Duyệt từng đề xuất một</b></td><td>Duyệt hàng loạt sẽ chôn mất một ý tưởng tồi</td></tr>
+            <tr><td><b>Khoá bền + mã lần xuất hiện</b></td><td>Không phân biệt được tái phát với vấn đề mới</td></tr>
+            <tr><td><b>Giữ liên kết bằng chứng sau khi đóng</b></td><td>Việc đã giải quyết bị đề xuất lại mãi</td></tr>
+            <tr><td><b>Đo kết quả sau khi đóng</b></td><td>"Đã làm" bị nhầm thành "đã có tác dụng"</td></tr>
+          </tbody>
+        </table>
+        <div class="flag hot">Để ý thứ cố tình vắng mặt: hệ thống không bao giờ tự áp dụng đề xuất của chính
+        nó. <b>Tự cải tiến, không phải tự sửa mình.</b></div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="4-3">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l5-1" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 05 · BÀI 5.1</span><h2>Bản ghi quyết định không sửa lại</h2></div>
+    <div class="modrule"></div>
+
+        <p>Một quyết định chỉ ở trạng thái <code>Accepted</code> hoặc <code>Superseded by NNNN</code>. Thân
+        của nó không bao giờ được sửa, dịch, hay di chuyển. Đổi hướng nghĩa là viết bản mới mang theo mọi
+        thứ còn đúng.</p>
+        <p>Nhiệm vụ duy nhất của nó là để phiên sau tin được điều đã <i>thực sự</i> được quyết lúc đó. Sửa
+        nó cho khớp hiểu biết hôm nay là phá đúng cái đó — mà cám dỗ thì thường trực, vì bản cũ thường
+        hoặc quê, hoặc sai ngôn ngữ, hoặc dài dòng.</p>
+        <div class="ask">Tác dụng ít ai để ý: vì bản thay thế buộc phải chép lại những gì còn đúng, viết nó
+        ép bạn xem lại từng mệnh đề của quyết định cũ. Đó là tính năng, không phải phiền toái.</div>
+        <p>Quyết định không có trạng thái "hoàn thành". Công việc thì hoàn thành; luật thì không.</p>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="5-1">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l5-2" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 05 · BÀI 5.2</span><h2>Quy mô suy ra từ việc người dùng là ai</h2></div>
+    <div class="modrule"></div>
+
+        <p>Hai dự án chung tư duy, khác nhau đúng một điểm: người dùng có đọc được code không. Mọi khác biệt
+        cấu trúc đều suy ra từ đó.</p>
+        <div class="tiles">
+          <div class="tile"><span class="k">HARNESS RUST</span><span class="v">21.178</span> <span class="u">dòng</span></div>
+          <div class="tile hot"><span class="k">MKIT RUST</span><span class="v">790</span> <span class="u">dòng · 3,7%</span></div>
+          <div class="tile"><span class="k">HARNESS LƯU</span><span class="v">16</span> <span class="u">bảng SQLite</span></div>
+          <div class="tile hot"><span class="k">MKIT LƯU</span><span class="v">1</span> <span class="u">file JSONL</span></div>
+        </div>
+        <table>
+          <thead><tr><th>Chiều</th><th>repository-harness</th><th>mkit</th><th>Vì sao khác</th></tr></thead>
+          <tbody>
+            <tr><td><b>Người dùng giả định</b></td><td>Đọc được code</td><td>Không đọc được code</td><td>Khác biệt gốc; mọi thứ khác suy ra từ đây</td></tr>
+            <tr><td><b>Chương trình sở hữu</b></td><td>Toàn bộ control plane</td><td>Chỉ cổng và ledger</td><td>Người không đọc code sẽ không bao giờ vận hành CLI</td></tr>
+            <tr><td><b>Kho bằng chứng</b></td><td>16 bảng quan hệ</td><td>Một file JSONL nối thêm</td><td>Khoảng 5 tín hiệu một tháng, không phải 5000</td></tr>
+            <tr><td><b>Vòng đời công việc</b></td><td>intake, story, backlog, hierarchy</td><td>Năm tài liệu markdown</td><td>Người dùng phải tự đọc được trạng thái của mình</td></tr>
+            <tr><td><b>Vòng cải tiến</b></td><td>đề xuất / duyệt / đóng / đo</td><td><span class="x">chỉ đọc và đếm</span></td><td>Con số cho biết tần suất, không cho biết nguyên nhân</td></tr>
+            <tr><td><b>Ngôn ngữ bản ghi</b></td><td>Thuật ngữ kỹ thuật</td><td>Hậu quả người dùng cảm được</td><td>"Đã lưu checkpoint" không có nghĩa gì với họ</td></tr>
+          </tbody>
+        </table>
+
+        <p>Phần đáng học là <b>vì sao bản nhỏ không đơn giản là bản tệ hơn</b>. mkit trông đợi khoảng năm
+        tín hiệu một tháng, không phải năm nghìn. Một file JSONL trả lời được "lệnh nào hay bị hiểu nhầm
+        nhất" tới hàng triệu dòng. SQLite chỉ đáng giá khi <b>độ phức tạp của câu hỏi</b> tăng, không phải
+        khi số hàng tăng.</p>
+        <div class="flag">Chọn kho lưu trữ theo lượng dữ liệu là lỗi phổ biến. Hãy chọn theo hình dạng của
+        câu hỏi.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="5-2">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l5-3" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 05 · BÀI 5.3</span><h2>Cuộc rút lui — máy móc phải liên tục xứng đáng</h2></div>
+    <div class="modrule"></div>
+
+        <p>repository-harness đã dựng đầy đủ control plane bằng Rust và SQLite. Hai tháng sau, chính
+        decision 0022 của nó đóng băng thứ đó:</p>
+        <pre><code><span class="c-dim">docs/decisions/0022 · 21-07-2026</span>
+<span class="c-red">"The default install no longer contains the Rust CLI or SQLite lifecycle"</span>
+
+Quyền quyết định hiện hành của repo đến từ tài liệu sản phẩm Git-native,
+kiến trúc, kế hoạch đang chạy, quyết định hiện hành, mã, test, CI,
+và bằng chứng lúc chạy.</code></pre>
+        <p>Không xoá gì và không viết lại lịch sử — database vẫn đọc được, consumer bên ngoài vẫn có đường
+        chuyển đổi. Nhưng <b>công việc thường ngày quay về các file trong git</b>.</p>
+        <div class="flag hot">Hãy đọc nó như dữ liệu, không phải thất bại: cơ chế sống sót chính là cơ chế
+        thật sự chịu lực. Khi máy móc thôi sinh lợi, hành động trung thực là đóng băng nó, không phải bảo
+        vệ nó.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="5-3">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l5-4" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 05 · BÀI 5.4</span><h2>Bốn lỗi chỉ tự dùng sản phẩm mới tìm ra</h2></div>
+    <div class="modrule"></div>
+
+        <p>Cả bốn đều xảy ra thật khi dựng mkit, cả bốn đều <b>không bộ test nào bắt được</b>, vì cả bốn
+        nằm ở lớp keo giữa các thành phần chứ không nằm trong thành phần nào.</p>
+        <div class="panel">
+          <div class="desc">
+            <div class="k">◉ 1 · VÒNG CHẾT</div><h3>Cổng chặn chính chìa khoá của nó</h3>
+            <p>Cổng từ chối sửa file cho tới khi có quyết định được nêu tên. Mà ghi quyết định <b>cũng là
+            sửa file</b>. Lần dùng thật đầu tiên không ghi nổi cái quyết định sẽ mở cổng.</p>
+            <div class="cost">SỬA · ghi vào docs/decisions/ luôn được phép</div>
+          </div>
+          <div class="mind">
+            <div class="k">▣ 2 · DẤU TRANG TRÍ</div><h3>Một dấu ba chấm giết cả bản cài</h3>
+            <p>Dấu <code>…</code> đặt ngay sau tên biến shell bị nuốt vào tên biến. Với <code>set -u</code>
+            script chết — sau khi đã ghi file, trong lúc in ra dòng "nothing was installed".</p>
+            <div class="cost">SỬA · dùng ngoặc, chỉ ASCII, kiểm trước khi ghi</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="desc">
+            <div class="k">◉ 3 · CHUỖI NUỐT LỜI TỪ CHỐI</div><h3><code>|| true</code> giết cổng trong im lặng</h3>
+            <p>Vỏ bọc cho hook được đề xuất là <code>gate check || true</code>. Nó biến mã thoát 2 thành 0.
+            Hook luôn báo thành công, cổng chết, mọi dấu hiệu bên ngoài vẫn như đang chạy.</p>
+            <div class="cost">SỬA · chỉ bỏ qua khi không có chương trình, còn lại giữ nguyên mã thoát</div>
+          </div>
+          <div class="mind">
+            <div class="k">▣ 4 · CHỜ MÃI MÃI</div><h3>Đọc dữ liệu vào mà không ai gửi</h3>
+            <p><code>check</code> đọc đầu vào chuẩn để nhận biết đang ghi quyết định. Chạy dưới hook thì an
+            toàn vì công cụ đóng luồng. Chạy trong script thì luồng mở mà không ai ghi —
+            <b>chương trình chờ vĩnh viễn</b>. Không lỗi, không thông báo, không kết thúc.</p>
+            <div class="cost">SỬA · chỉ đọc khi hook nói rõ là có dữ liệu</div>
+            <div class="flag hot">Test Rust mặc định <b>đóng</b> đầu vào của tiến trình con, nên 29 test
+            không thể tái hiện tình huống này. Chỉ chạy thật mới lộ.</div>
+          </div>
+        </div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="5-4">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l5-5" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 05 · BÀI 5.5</span><h2>Thứ tự dựng — làm gì trước</h2></div>
+    <div class="modrule"></div>
+
+        <ol class="steps">
+          <li><b>Viết danh sách những thứ agent không được quyết.</b> Đủ ngắn để kiểm mỗi lần. Sáu là chạy
+          được; hai mươi là tài liệu không ai đọc.</li>
+          <li><b>Hỏi từng luật: vi phạm có ai biết không?</b> Những câu trả lời "không" chính là ứng viên
+          cần cơ chế.</li>
+          <li><b>Đưa đúng những luật đó lên thang.</b> Bắt đầu từ tầng công cụ — một hook rẻ hơn hệ thống
+          kiểu dữ liệu rất nhiều mà bắt cùng loại vi phạm.</li>
+          <li><b>Cho mọi đường lỗi đều từ chối,</b> rồi viết test cố tình phá trạng thái.</li>
+          <li><b>Tìm ranh giới của một yêu cầu</b> và gắn phê duyệt vào đó. Đừng bao giờ gắn vào phiên.</li>
+          <li><b>Ghi bằng nhãn và số đếm.</b> Từ chối prose. Bạn sẽ cần dữ liệu này trước khi có thứ đọc
+          nó rất lâu.</li>
+          <li><b>Tự dùng harness trên chính harness.</b> Cả bốn lỗi ở bài trước đều tìm ra theo cách này và
+          không cách nào khác tìm ra được.</li>
+          <li><b>Cuối cùng mới dựng phần đọc.</b> Sinh đề xuất từ bằng chứng là bước cuối, và không bao giờ
+          được tự áp dụng.</li>
+        </ol>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="5-5">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l6-1" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 06 · BÀI 6.1</span><h2>Mindset: repo là nguồn sự thật, không phải prompt dài hơn</h2></div>
+    <div class="modrule"></div>
+
+        <p>Hầu hết công cụ "giúp agent làm việc tốt hơn" đều đi theo hướng thêm bộ nhớ: một cơ sở dữ liệu
+        task, một hàng đợi, một vòng đời story. repository-harness đi ngược lại. Câu đầu tiên trong
+        <code>AGENTS.md</code> nói thẳng nó <b>không</b> có những thứ đó:</p>
+        <pre><code>Harness has no task database or orchestration lifecycle.
+Use repository plans and behavior-level proof;
+do not create parallel <span class="c-red">control-plane state</span>.</code></pre>
+        <div class="ask">Lý do: mọi trạng thái sống ngoài repo đều sẽ trôi khỏi repo. Một task nói "đã xong"
+        trong khi mã nguồn nói khác thì task đó là nói dối, và không ai phát hiện được vì hai thứ không
+        bao giờ được so sánh.</div>
+        <p>Bảy nguyên tắc trong <code>docs/HARNESS.md</code> đều là hệ quả của một quyết định đó:</p>
+        <table>
+          <thead><tr><th>#</th><th>Nguyên tắc</th><th>Nó chặn điều gì</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><b>Repo thắng</b></td><td>Ý định chỉ tồn tại trong chat</td></tr>
+            <tr><td>2</td><td><b>Nạp ngữ cảnh nhỏ nhất</b></td><td><code>AGENTS.md</code> phình thành bách khoa toàn thư</td></tr>
+            <tr><td>3</td><td><b>Quy trình theo hình dạng việc</b></td><td>Sửa typo cũng phải mở plan</td></tr>
+            <tr><td>4</td><td><b>Lựa chọn hệ trọng thuộc về người</b></td><td>Agent tự chọn hạn mức rồi đóng băng nó vào code</td></tr>
+            <tr><td>5</td><td><b>Hành vi mới chứng minh hoàn thành</b></td><td>Bản tự khai thay cho bằng chứng</td></tr>
+            <tr><td>6</td><td><b>App là của người dùng</b></td><td>Harness bịa lệnh chạy, credential, fixture</td></tr>
+            <tr><td>7</td><td><b>Harness chỉ bảo trì lõi của nó</b></td><td>Công cụ tự biến thành control plane</td></tr>
+          </tbody>
+        </table>
+        <div class="flag hot">Phép thử nhanh: hỏi công cụ của bạn "nếu tôi xoá toàn bộ trạng thái ngoài repo,
+        có mất thông tin nào không?" Harness trả lời <b>không</b> — và đó là điều kiện để repo thật sự là
+        nguồn sự thật.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="6-1">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l6-2" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 06 · BÀI 6.2</span><h2>Kỹ thuật dựng: contract test biến tài liệu thành thứ chặn được</h2></div>
+    <div class="modrule"></div>
+
+        <p>Đây là kỹ thuật đặc trưng nhất của repo này, và nó là ứng dụng trực tiếp của
+        <b>kỹ thuật 08 — đưa luật xuống thành ràng buộc của database</b>. Repo không viết "README phải có mục X" rồi hy vọng.
+        Nó <i>grep</i>:</p>
+        <pre><code><span class="c-dim">tests/docs/test-doc-contracts.sh</span>
+require README.md <span class="c-grn">'## What We Prove'</span>
+require README.md <span class="c-grn">'## Protocol V1 End Of Life'</span>
+require .github/workflows/premerge.yml <span class="c-grn">'run: scripts/validate-premerge.sh'</span></code></pre>
+        <p>Cùng thủ pháp đó được dùng cho những thứ dễ trôi nhất — số nền tảng, số asset phát hành,
+        thứ tự các bước trong workflow:</p>
+        <table>
+          <thead><tr><th>Invariant — điều luôn phải đúng</th><th>Kiểm ở đâu</th></tr></thead>
+          <tbody>
+            <tr><td>Đúng 5 nền tảng trong ma trận build</td><td><code>test-harness-release-workflow-contract.sh</code> đếm dòng <code>- platform:</code></td></tr>
+            <tr><td>Đúng 10 file phát hành</td><td><code>verify-harness-release-assets.sh</code> so khớp inventory chính xác</td></tr>
+            <tr><td>Kiểm inventory <i>trước</i> khi gắn tag</td><td>So sánh số dòng của 2 bước trong file YAML</td></tr>
+            <tr><td>Cây đã cài == manifest, không dư một file</td><td><code>assert-install-manifest-links.sh</code> cài thật rồi diff tập file</td></tr>
+            <tr><td>Lớp trong không phụ thuộc lớp ngoài</td><td><code>tests/clean_architecture.rs</code></td></tr>
+          </tbody>
+        </table>
+        <div class="ask">Bằng chứng nó hoạt động: khi cắt bớt nền tảng, <b>bốn</b> chỗ đếm độc lập cùng đỏ.
+        Không có contract test thì bản phát hành vẫn build xong và chỉ hỏng lúc người dùng tải về.</div>
+        <p>Hình dạng phát hành cũng là một cơ chế chứ không phải quy trình: <b>chứng minh trước, gắn tag
+        sau</b>. Build và kiểm mọi checksum trên commit chưa gắn tag, kiểm inventory, rồi mới gắn tag bất
+        biến và publish với <code>--verify-tag</code>. Contract test cấm <code>--clobber</code>, cấm
+        <code>git tag</code> trần, cấm trigger <code>push</code>.</p>
+        <div class="flag">Một lệnh xác thực duy nhất: <code>scripts/validate-premerge.sh</code>. Đây là
+        <b>kỹ thuật 06 — luật viết một nơi, chỗ kiểm tra để một nơi</b> làm đúng: luật nằm trong <code>docs/</code>, enforcement
+        nằm trong <code>tests/</code>, và cả hai chỉ gặp nhau qua một entrypoint mà người bảo trì thật sự chạy.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="6-2">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l6-3" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 06 · BÀI 6.3</span><h2>Dùng thế nào: bốn hình dạng công việc</h2></div>
+    <div class="modrule"></div>
+
+        <p>Cài vào repo bạn muốn agent làm việc trong đó:</p>
+        <pre><code>curl -fsSL <span class="c-dim">.../scripts/install-harness.sh</span> | bash -s -- --yes</code></pre>
+        <p>Nó ghi <code>AGENTS.md</code> (Codex đọc tự động), một <code>CLAUDE.md</code> import file đó
+        (Claude Code không tự đọc <code>AGENTS.md</code>), bản đồ tài liệu, thư mục plan/decision, và
+        binary <code>scripts/bin/harness</code>. Nó <b>không</b> ghi cấu hình toàn cục.</p>
+        <p>Từ đó agent tự phân loại việc trước khi động vào file — đây là toàn bộ giá trị vận hành:</p>
+        <ol class="steps">
+          <li><b>Chỉ đọc</b> — hỏi, review, chẩn đoán, báo cáo. Đọc bề mặt nhỏ nhất, trả lời kèm bằng chứng,
+          không sửa gì. Phát hiện ra lỗi cũng không cho phép tự sửa.</li>
+          <li><b>Thay đổi có giới hạn</b> — xem quyền quyết định và hành vi bị ảnh hưởng, sửa nhỏ nhất, chạy đúng
+          test phủ nó. Không cần plan, không cần bản ghi vòng đời song song.</li>
+          <li><b>Thay đổi cần nhớ lâu</b> — bắc qua nhiều phiên, nhiều người, khó khôi phục. Mở đúng
+          <b>một</b> file trong <code>docs/plans/active/</code>, giữ quyết định và tiến độ ở đó, xong thì
+          chuyển sang <code>completed/</code>.</li>
+          <li><b>Dừng</b> — còn lựa chọn sản phẩm khác nhau về bản chất. Trình bày lựa chọn và hệ quả,
+          không đoán.</li>
+        </ol>
+        <div class="ask">Ví dụ chuẩn của repo: "thêm rate limiting" mà không có hạn mức, không có khoá để
+        đếm, không có hợp đồng lỗi thì <b>phải dừng</b>. "Áp đúng 20 request/phút cho mỗi tenant đã xác thực"
+        thì làm được. Giá trị mặc định của thư viện không phải quyền quyết định.</div>
+        <p>Các skill đều phải gọi tên mới chạy, không có cái nào tự kích hoạt lúc cài:</p>
+        <table>
+          <thead><tr><th>Gọi</th><th>Làm gì</th></tr></thead>
+          <tbody>
+            <tr><td><code>$encode-invariant</code></td><td>Biến một luật đã được chấp nhận thành check chạy được, kèm chứng minh cả hai chiều</td></tr>
+            <tr><td><code>$onboard-repository</code></td><td>Đọc repo lạ, chỉ đọc ở lượt đầu, đề xuất sau</td></tr>
+            <tr><td><code>$improve-harness</code></td><td>Sửa chính harness, bắt buộc có bằng chứng trước/sau</td></tr>
+            <tr><td><code>$audit-onboarding-proposal</code></td><td>Người thứ hai soi lại đề xuất onboarding</td></tr>
+          </tbody>
+        </table>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="6-3">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="l6-4" hidden>
+    <div class="modhdr"><span class="num">MÔ-ĐUN 06 · BÀI 6.4</span><h2>Dùng thế nào: cập nhật, và chỗ nó cố tình dừng lại</h2></div>
+    <div class="modrule"></div>
+
+        <p>Harness giữ nguyên bytes gốc của mọi file nó quản lý dưới <code>.harness-core/base/</code>.
+        Nhờ vậy <code>harness update</code> làm được <b>three-way merge</b> thay vì ghi đè:</p>
+        <pre><code>BASE      bản gốc lúc cài
+LOCAL     bản bạn đã sửa
+UPSTREAM  bản mới về
+
+không đè lên nhau  → gộp, backup, thay <span class="c-grn">nguyên khối</span>
+đè lên nhau        → <span class="c-red">dừng, không đổi file nào</span></code></pre>
+        <p>Khi dừng, nó không tự chọn. Nó giữ đủ bốn bản BASE / LOCAL / UPSTREAM / RESOLVED, đóng băng tập
+        file đầu vào, rồi chờ người sửa bản RESOLVED và chạy <code>--continue</code>. Muốn bỏ thì
+        <code>--abort</code>, và lệnh đó chỉ vứt phiên hợp nhất chứ không đụng gì khác.</p>
+        <div class="ask">Đây chính là <b>kỹ thuật 05 — máy làm phần chắc chắn, người làm phần phải cân nhắc</b>. Chương trình biết hai
+        đoạn văn bản có đè lên nhau không; nó không biết đoạn nào <i>đúng</i>. Nên nó làm phần biết được
+        và dừng ở phần không biết.</div>
+        <p>Ranh giới tin cậy của bản cập nhật được phát biểu chính xác, kể cả phần nó <i>không</i> bảo đảm:</p>
+        <table>
+          <thead><tr><th>Kiểm</th><th>Bảo đảm điều gì</th></tr></thead>
+          <tbody>
+            <tr><td>Con trỏ tag <code>harness-v*</code></td><td>Tải đúng bản phát hành đang trỏ tới</td></tr>
+            <tr><td>SHA-256 kèm file</td><td>Bytes khớp với bản phát hành trên GitHub</td></tr>
+            <tr><td>Binary tự báo version == tag</td><td>Không có chuyện tag và nội dung lệch nhau</td></tr>
+            <tr><td>Từ chối hạ cấp</td><td>Không bị đẩy ngược về bản cũ</td></tr>
+            <tr><td class="x">Không bảo đảm</td><td class="x">SHA-256 <b>không</b> là gốc tin cậy chống nhà phát hành bị chiếm</td></tr>
+          </tbody>
+        </table>
+        <div class="flag hot">Nếu bạn fork repo này: kiểm <code>RELEASE_TAG_URL</code> và
+        <code>RELEASE_DOWNLOAD_ROOT</code> trong <code>release_handoff.rs</code>. Script cài có thể đã trỏ
+        về fork của bạn trong khi hai hằng số đó vẫn trỏ về repo gốc — khi đó lần
+        <code>harness update</code> đầu tiên sẽ lặng lẽ kéo binary upstream về và xoá sạch thay đổi của
+        fork. Cài và cập nhật phải cùng một nguồn.</div>
+    <div class="controls">
+      <button class="ghost" data-go="prev">◀ Bài trước</button>
+      <button data-done="6-4">Đánh dấu xong</button>
+      <button class="ghost" data-go="next">Bài sau ▶</button>
+    </div>
+  </section>
+  <section data-view="cards" hidden>
+    <h2>Thẻ ghi nhớ</h2>
+    <p>Bấm vào thẻ để lật. Tự chấm thật thà — <b>Thuộc rồi</b> loại thẻ khỏi vòng quay,
+    <b>Xem lại</b> đẩy nó xuống cuối. 24 thẻ.</p>
+    <div class="card" id="card">
+      <span class="side" id="card-side">CÂU HỎI</span>
+      <span class="idx" id="card-idx">1 / 24</span>
+      <div id="card-body"></div>
+      <span class="hint">bấm để lật</span>
+    </div>
+    <div class="controls">
+      <button class="ghost" id="fc-prev">◀ Trước</button>
+      <button id="fc-flip">Lật</button>
+      <button class="ghost" id="fc-next">Sau ▶</button>
+      <button class="ghost" id="fc-known">✓ Thuộc rồi</button>
+      <button class="ghost" id="fc-review">↻ Xem lại</button>
+      <button class="ghost" id="fc-reset">Chơi lại</button>
+    </div>
+    <div class="deckbar">
+      <span class="pill" id="fc-remaining">24 thẻ còn lại</span>
+      <span class="pill good" id="fc-known-count">0 thuộc</span>
+      <span class="pill hot" id="fc-review-count">0 cần xem lại</span>
+    </div>
+  </section>
+
+  <section data-view="quiz" hidden>
+    <h2>Trắc nghiệm — 16 câu</h2>
+    <p>Mỗi đáp án sai đều là một niềm tin có thật ngoài đời. Trả lời xong bạn sẽ thấy vì sao đáp án đúng
+    là đúng, và vì sao cái bẫy lại hấp dẫn.</p>
+    <div id="quiz"></div>
+    <div class="score" id="score" hidden>
+      <span class="k">KẾT QUẢ</span>
+      <div class="v" id="score-v">0 / 16</div>
+      <p id="score-note"></p>
+      <div class="controls"><button class="ghost" id="quiz-reset">Làm lại</button></div>
+    </div>
+  </section>
+
+  <section data-view="repo" hidden>
+    <h2>Hiểu repo — 15 câu</h2>
+    <p>Phần trên kiểm tra bạn hiểu <b>kỹ thuật harness</b> nói chung. Phần này chỉ hỏi về
+    <b>repository-harness</b>: nó quyết định điều gì, nó từ chối làm gì, và bạn vận hành nó ra sao.
+    Mọi đáp án sai ở đây đều là cách dùng sai có thật.</p>
+    <div id="quiz-repo"></div>
+    <div class="score" id="score-repo" hidden>
+      <span class="k">KẾT QUẢ</span>
+      <div class="v" id="score-repo-v">0 / 15</div>
+      <p id="score-repo-note"></p>
+      <div class="controls"><button class="ghost" id="quiz-repo-reset">Làm lại</button></div>
+    </div>
+  </section>
+
+<div class="foot">
+    <b>Nguồn.</b> Đọc trực tiếp từ thư mục làm việc ngày 17-08-2026:
+    <code>repository-harness</code> (21.178 dòng Rust, 26 file; 16 bảng trong
+    <code>.harness/core-state/harness.db</code>; decision 0005, 0008, 0022) và
+    <code>mkit</code> v1.4.1 (790 dòng Rust, 30 test; decision 0001, 0012–0018).<br>
+    <b>Chưa kiểm chứng.</b> Khả năng hook của Pi chưa bao giờ được thử. Codex có cờ tin cậy hook nhưng
+    định dạng khai báo chưa xác nhận được, nên không khẳng định gì về nó. Phần sinh đề xuất tự động ở bài
+    4.3 chỉ có trong repository-harness; mkit ghi bằng chứng và đọc lại bằng <code>mkit-gate study</code>,
+    nhưng không tự đề xuất sửa luật.<br>
+    Tiến độ chỉ lưu trong trình duyệt này.
+  </div>
+
+</main>
+</div>
+</div>
+<script>
+(function(){
+  "use strict";
+
+  var ORDER = ["overview", "l1-1", "l1-2", "l1-3", "l2-1", "l2-2", "l2-3", "l2-4", "l3-1", "l3-2", "l3-3", "l3-4", "l4-1", "l4-2", "l4-3", "l5-1", "l5-2", "l5-3", "l5-4", "l5-5", "l6-1", "l6-2", "l6-3", "l6-4", "cards", "quiz", "repo"];
+  var LABELS = {"overview": "Tổng quan", "cards": "Thẻ ghi nhớ", "quiz": "Trắc nghiệm", "repo": "Hiểu repo", "l1-1": "Bài 1.1", "l1-2": "Bài 1.2", "l1-3": "Bài 1.3", "l2-1": "Bài 2.1", "l2-2": "Bài 2.2", "l2-3": "Bài 2.3", "l2-4": "Bài 2.4", "l3-1": "Bài 3.1", "l3-2": "Bài 3.2", "l3-3": "Bài 3.3", "l3-4": "Bài 3.4", "l4-1": "Bài 4.1", "l4-2": "Bài 4.2", "l4-3": "Bài 4.3", "l5-1": "Bài 5.1", "l5-2": "Bài 5.2", "l5-3": "Bài 5.3", "l5-4": "Bài 5.4", "l5-5": "Bài 5.5", "l6-1": "Bài 6.1", "l6-2": "Bài 6.2", "l6-3": "Bài 6.3", "l6-4": "Bài 6.4"};
+  var STORE = 'harness-course-vi-done';
+
+  function load(){ try { var raw = localStorage.getItem(STORE); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; } }
+  function save(v){ try { localStorage.setItem(STORE, JSON.stringify(v)); } catch (e) {} }
+
+  var done = load();
+  var views = {};
+  Array.prototype.slice.call(document.querySelectorAll('[data-view]')).forEach(function(el){
+    (views[el.getAttribute('data-view')] = views[el.getAttribute('data-view')] || []).push(el);
+  });
+  var navTargets = Array.prototype.slice.call(document.querySelectorAll('[data-target]'));
+  var pill = document.getElementById('viewPill');
+  var current = 'overview';
+
+  function paintProgress(){
+    var total = 0, doneCount = 0;
+    Array.prototype.slice.call(document.querySelectorAll('.nav-group')).forEach(function(group){
+      var kids = Array.prototype.slice.call(group.querySelectorAll('.nav-child'));
+      var n = 0;
+      kids.forEach(function(kid){
+        var hit = !!done[kid.getAttribute('data-lesson')];
+        kid.classList.toggle('done', hit);
+        kid.querySelector('.nav-mark').textContent = hit ? '✓' : '·';
+        if (hit) { n += 1; }
+      });
+      total += kids.length; doneCount += n;
+      var count = group.querySelector('.nav-count');
+      count.textContent = n + '/' + kids.length;
+      count.className = 'nav-count' + (n === kids.length ? ' ok' : (n ? ' hot' : ''));
+      group.classList.toggle('done', n === kids.length);
+    });
+    document.getElementById('navProgCount').textContent = doneCount + '/' + total;
+    document.getElementById('navProgFill').style.setProperty('--progress', (doneCount / total * 100) + '%');
+    Array.prototype.slice.call(document.querySelectorAll('[data-done]')).forEach(function(btn){
+      var hit = !!done[btn.getAttribute('data-done')];
+      btn.className = hit ? 'ghost is-done' : '';
+      btn.textContent = hit ? '✓ Đã xong' : 'Đánh dấu xong';
+    });
+  }
+
+  function show(target){
+    if (!views[target]) { return; }
+    current = target;
+    Object.keys(views).forEach(function(name){
+      views[name].forEach(function(el){ el.hidden = (name !== target); });
+    });
+    navTargets.forEach(function(btn){ btn.classList.toggle('active', btn.getAttribute('data-target') === target); });
+    var active = document.querySelector('.nav-child[data-target="' + target + '"]');
+    if (active){
+      var group = active.closest('.nav-group');
+      if (group && !group.classList.contains('open')){
+        group.classList.add('open');
+        var toggle = group.querySelector('[data-nav-group-toggle]');
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.querySelector('.nav-arrow').textContent = '▾';
+      }
+    }
+    pill.textContent = LABELS[target] || target;
+    window.scrollTo(0, 0);
+  }
+
+  navTargets.forEach(function(btn){
+    btn.addEventListener('click', function(){ show(btn.getAttribute('data-target')); });
+  });
+  Array.prototype.slice.call(document.querySelectorAll('[data-go]')).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var step = btn.getAttribute('data-go') === 'next' ? 1 : -1;
+      var next = ORDER[ORDER.indexOf(current) + step];
+      if (next) { show(next); }
+    });
+  });
+  Array.prototype.slice.call(document.querySelectorAll('[data-done]')).forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.getAttribute('data-done');
+      done[id] = !done[id];
+      if (!done[id]) { delete done[id]; }
+      save(done); paintProgress();
+    });
+  });
+  document.getElementById('resetProg').addEventListener('click', function(){
+    done = {}; save(done); paintProgress();
+  });
+
+  paintProgress();
+  show('overview');
+
+  var DECK = [
+    ["Cách duy nhất để biết bạn có harness thật hay chỉ có tài liệu?",
+     "Một vi phạm có thể xảy ra mà không ai biết không?",
+     "Nếu có thì luật đó chỉ mang tính khuyên nhủ. Tuân thủ và vi phạm nhìn từ ngoài giống hệt nhau, nên không bao giờ sửa được gì."],
+    ["Vì sao lấy giá trị mặc định của thư viện là vi phạm authority gate?",
+     "Vì không ai chọn con số đó cả.",
+     "Mặc định không mang quyền quyết định nào. Coi nó là đã chốt là mạo danh quyết định của người dùng và giấu nó trong đoạn mã họ không đọc được."],
+    ["Kể bốn bậc của thang enforcement.",
+     "Prose · tầng công cụ · kiểu dữ liệu · schema lưu trữ.",
+     "Chỉ bậc một là bỏ qua được. Đưa một luật lên một bậc là biến 'không nên' thành 'không thể'."],
+    ["Ba loại luật nào phải nằm mãi ở bậc 1?",
+     "Việc đánh giá ý nghĩa, chuyện gu, và những chỗ chặn nhầm đắt hơn cho lọt.",
+     "Chương trình đoán ngữ nghĩa thì sai cả hai chiều, và cổng chặn nhầm sẽ bị chính người bị làm phiền tắt đi."],
+    ["Nêu cách chia việc giữa model và chương trình trong một cái cổng.",
+     "Model đánh giá; chương trình enforce rằng việc đánh giá đó đã xảy ra.",
+     "Enforcement thành tuyệt đối dù bản thân đánh giá vẫn sai được. Chương trình không bao giờ tự quyết một yêu cầu có chạm tới tiền hay không."],
+    ["Hook PreToolUse thoát mã 2 thì chuyện gì xảy ra?",
+     "Lệnh của công cụ bị huỷ trước khi chạy.",
+     "Đây là cơ chế bậc 2 rẻ nhất: không cần hệ thống kiểu, không cần database, và model không nói vòng qua được."],
+    ["Vì sao lệnh mở lượt phải thoát 0 ngay cả khi nó thất bại?",
+     "Vì hook UserPromptSubmit thoát khác 0 sẽ chặn luôn câu nói của người dùng.",
+     "Thành phần chặn được con người thuộc hạng rủi ro khác thành phần chặn agent. An toàn không giảm vì check vẫn chặn độc lập."],
+    ["Vì sao phê duyệt gắn với một yêu cầu chứ không phải một phiên?",
+     "Nếu không, một lần phê duyệt vô hại sẽ âm thầm bao trùm mọi lần sửa sau đó.",
+     "Qua cổng cho một lỗi chính tả, rồi hai tiếng sau sửa phần thanh toán dưới cùng phê duyệt ấy. Ranh giới phải khớp với đơn vị người dùng thật sự nói ra."],
+    ["Cổng làm sao biết một yêu cầu kết thúc ở đâu?",
+     "Công cụ nói cho nó biết — hook UserPromptSubmit mở lượt mới và xoá phê duyệt cũ.",
+     "Đừng bao giờ suy ra ranh giới từ chính công việc. Lấy nó từ khoảnh khắc người dùng lên tiếng."],
+    ["Phân tích-đừng-kiểm-tra cho bạn thứ gì mà kiểm một chuỗi không cho?",
+     "Một giá trị sai không thể tồn tại ở bất kỳ đâu phía sau.",
+     "Chuỗi 'đã kiểm' vẫn là chuỗi; ba hàm sau có người dùng nó mà không kiểm. Kiểu đã phân tích mang bảo đảm đi cùng nó."],
+    ["RelativePath::parse từ chối những gì?",
+     "Rỗng, đường dẫn tuyệt đối, kết thúc bằng /, có dấu \\, có ký tự NUL, và mọi đường dẫn chứa '..'.",
+     "Đó là một ranh giới ngăn chặn được diễn đạt bằng kiểu dữ liệu: không gì tạo ra từ nó leo ra khỏi repo được."],
+    ["Một unique index có điều kiện đang làm gì trong harness?",
+     "Biên dịch một câu tiếng Anh vào chính engine lưu trữ.",
+     "'Không được tạo lần xuất hiện mở thứ hai' trở thành UNIQUE ... WHERE status IN ('proposed','accepted'). Hàng đã đóng thì lặp được; hàng mở thì không."],
+    ["Vì sao ledger phải từ chối prose chứ không lọc nó?",
+     "Bộ lọc là lời hứa rằng danh sách mẫu của bạn đã đầy đủ; từ chối thì không cần lời hứa nào.",
+     "Bản ghi nằm trong repo người dùng không đọc được và có thể bị công khai. Từ chối là bảo đảm duy nhất còn đứng vững khi bạn sai."],
+    ["Vì sao một lần bị chặn chỉ ghi một dòng thay vì mỗi lần thử một dòng?",
+     "Để một agent bướng bỉnh thử lại không làm ngập bản ghi.",
+     "Chất lượng bằng chứng sụp đổ khi một sự cố đẻ ra một trăm hàng; con số thôi mang nghĩa 'số sự cố'."],
+    ["Vì sao ghi ledger thất bại không bao giờ được chặn việc sửa file?",
+     "Quan sát không được vô tình biến thành enforcement.",
+     "Ledger mô tả hệ thống chứ không cai trị nó. Đầy ổ đĩa không bao giờ nên biến thành ngừng hoạt động."],
+    ["Vì sao bộ sinh đề xuất cải tiến dựa trên quy tắc chứ không dùng model?",
+     "Để đề xuất tái lập được và kiểm toán được.",
+     "Bạn phải giải thích được vì sao một đề xuất xuất hiện, và cùng bằng chứng phải ra cùng đề xuất. Thông minh ở đây tốn khả năng truy vết mà không đổi lại gì."],
+    ["Tự cải tiến hay tự sửa mình — harness tốt làm cái nào?",
+     "Tự cải tiến. Nó đề xuất; con người duyệt.",
+     "Mặc định chỉ đọc, duyệt tường minh, mỗi lần một cái, để một lần duyệt hàng loạt không chôn mất đúng cái ý tưởng tồi giữa chín cái tốt."],
+    ["Vì sao thân một bản ghi quyết định không bao giờ được sửa?",
+     "Nhiệm vụ duy nhất của nó là để phiên sau tin được điều đã thực sự được quyết.",
+     "Viết lại cho khớp hôm nay là phá đúng cái đó. Đổi hướng bằng cách viết bản mới thay thế nó."],
+    ["Luật bản-thay-thế ép bạn làm gì, một cách hữu ích?",
+     "Chép lại từng mệnh đề của quyết định cũ mà vẫn còn đúng.",
+     "Bạn không thể đổi hướng mà không xem lại thứ mình đang giữ. Ma sát đó chính là mục đích."],
+    ["Vì sao cấm dùng số lượng test làm bằng chứng nói với người dùng?",
+     "Vì nó nghe như bằng chứng với người không có cách nào kiểm.",
+     "Câu nói mang uy quyền của một chứng minh mà không kèm khả năng kiểm chứng. Thay bằng kịch bản người chủ tự chạy."],
+    ["Khi nào SQLite mới xứng đáng hơn một file JSONL?",
+     "Khi độ phức tạp của câu hỏi tăng — không phải khi số hàng tăng.",
+     "File phẳng trả lời được 'lệnh nào hay bị hiểu nhầm nhất' tới hàng triệu dòng. Chọn kho lưu theo hình dạng câu hỏi."],
+    ["Nên đọc việc repository-harness tự đóng băng control plane SQLite của nó như thế nào?",
+     "Như dữ liệu: cơ chế sống sót chính là cơ chế thật sự chịu lực.",
+     "Máy móc phải liên tục xứng đáng. Đóng băng mà không xoá lịch sử là hành động trung thực khi nó thôi sinh lợi."],
+    ["Vì sao không được viết `gate check || true` trong hook?",
+     "Vì nó biến mã thoát 2 thành 0 — cổng chết trong im lặng.",
+     "Hook luôn báo thành công, mọi dấu hiệu bên ngoài vẫn như đang chạy. Chỉ được bỏ qua khi không có chương trình, còn lại phải giữ nguyên mã thoát."],
+    ["Vì sao 29 test không bắt được lỗi chương trình chờ dữ liệu vào mãi mãi?",
+     "Vì test Rust mặc định đóng đầu vào của tiến trình con.",
+     "Điều kiện gây lỗi — luồng vào mở mà không ai ghi — không bao giờ tái hiện trong test. Chỉ chạy thật trong script mới lộ ra."]
+  ];
+
+  var order = [], pos = 0, flipped = false, known = {}, reviewed = {};
+  var cardEl = document.getElementById('card');
+  var cardBody = document.getElementById('card-body');
+  var cardSide = document.getElementById('card-side');
+  var cardIdx = document.getElementById('card-idx');
+
+  function rotation(){ return order.filter(function(i){ return !known[i]; }); }
+
+  function paintCard(){
+    var live = rotation();
+    document.getElementById('fc-remaining').textContent = live.length + ' thẻ còn lại';
+    document.getElementById('fc-known-count').textContent = Object.keys(known).length + ' thuộc';
+    document.getElementById('fc-review-count').textContent = Object.keys(reviewed).length + ' cần xem lại';
+
+    if (!live.length){
+      cardEl.classList.remove('flipped');
+      cardSide.textContent = 'HẾT THẺ';
+      cardIdx.textContent = '';
+      cardBody.innerHTML = '<div class="q">Bạn đã đánh dấu thuộc hết.</div>' +
+        '<div class="why">Bấm Chơi lại để chạy vòng nữa. Những thẻ bạn thấy khó mới là thẻ đáng làm lần hai.</div>';
+      return;
+    }
+    if (pos >= live.length) { pos = 0; }
+    if (pos < 0) { pos = live.length - 1; }
+
+    var card = DECK[live[pos]];
+    cardIdx.textContent = (pos + 1) + ' / ' + live.length;
+    cardEl.classList.toggle('flipped', flipped);
+    cardSide.textContent = flipped ? 'TRẢ LỜI' : 'CÂU HỎI';
+
+    cardBody.textContent = '';
+    if (flipped){
+      var a = document.createElement('div'); a.className = 'a'; a.textContent = card[1];
+      var w = document.createElement('div'); w.className = 'why'; w.textContent = card[2];
+      cardBody.appendChild(a); cardBody.appendChild(w);
+    } else {
+      var q = document.createElement('div'); q.className = 'q'; q.textContent = card[0];
+      cardBody.appendChild(q);
+    }
+  }
+
+  function resetDeck(){
+    order = DECK.map(function(_, i){ return i; });
+    known = {}; reviewed = {}; pos = 0; flipped = false;
+    paintCard();
+  }
+
+  cardEl.addEventListener('click', function(){ flipped = !flipped; paintCard(); });
+  document.getElementById('fc-flip').addEventListener('click', function(){ flipped = !flipped; paintCard(); });
+  document.getElementById('fc-next').addEventListener('click', function(){ pos += 1; flipped = false; paintCard(); });
+  document.getElementById('fc-prev').addEventListener('click', function(){ pos -= 1; flipped = false; paintCard(); });
+  document.getElementById('fc-known').addEventListener('click', function(){
+    var live = rotation();
+    if (!live.length) { return; }
+    known[live[pos]] = true; delete reviewed[live[pos]];
+    flipped = false; paintCard();
+  });
+  document.getElementById('fc-review').addEventListener('click', function(){
+    var live = rotation();
+    if (!live.length) { return; }
+    var id = live[pos];
+    reviewed[id] = true;
+    order = order.filter(function(i){ return i !== id; }).concat([id]);
+    flipped = false; paintCard();
+  });
+  document.getElementById('fc-reset').addEventListener('click', resetDeck);
+  resetDeck();
+
+  var QUIZ = [
+    { q: "Hook chạy cổng trước mỗi lệnh ghi file. Cổng thoát mã 2. Chuyện gì đã xảy ra?",
+      o: ["Lệnh ghi bị huỷ và lý do được trả về cho agent",
+          "Lệnh ghi vẫn chạy, chỉ ghi thêm một cảnh báo",
+          "Phiên làm việc kết thúc",
+          "Lệnh ghi được xếp hàng chờ cho tới khi qua cổng"],
+      a: 0,
+      why: "Thoát mã 2 trong hook PreToolUse huỷ lệnh của công cụ. Đây là chỗ rẻ nhất để có enforcement thật.",
+      trap: "Đáp án B mô tả một cái linter. Cảnh báo mà không chặn thì bạn vẫn đứng nguyên chỗ prose để lại — vi phạm vẫn xảy ra." },
+
+    { q: "Cổng từ chối sửa file cho tới khi có quyết định được nêu tên. Giờ bạn cần ghi chính cái quyết định đó. Sửa thế nào cho đúng?",
+      o: ["Luôn cho phép ghi vào thư mục quyết định",
+          "Cho agent bỏ qua cổng một lần mỗi phiên",
+          "Tạo sẵn một file quyết định rỗng lúc cài",
+          "Cho phép tắt cổng bằng một cờ dòng lệnh"],
+      a: 0,
+      why: "Ghi quyết định chính là cách thoả mãn cổng, nên nó không bao giờ được là thứ cổng chặn. Miễn trừ này hẹp, giới hạn theo đường dẫn, và test được.",
+      trap: "Đáp án D giải được vòng chết và giết luôn cái cổng: agent nào gặp từ chối cũng sẽ với lấy cái cờ đó." },
+
+    { q: "Vì sao lệnh mở lượt phải thoát 0 khi không tìm thấy repo?",
+      o: ["Vì hook UserPromptSubmit thoát khác 0 sẽ chặn câu nói của người dùng",
+          "Vì mở lượt không liên quan tới an toàn",
+          "Vì mã thoát lớn hơn 0 do công cụ giữ chỗ",
+          "Vì nó chạy trước khi repo được tải về"],
+      a: 0,
+      why: "Thành phần chặn được con người thuộc hạng rủi ro khác thành phần chặn agent. An toàn không đổi vì check vẫn tự chặn độc lập.",
+      trap: "Đáp án B nghe hợp lý và sai lý do. Mở lượt CÓ liên quan tới an toàn — chính vì thế chỗ lệch đó phải được lập luận chứ không mặc nhiên." },
+
+    { q: "Đâu KHÔNG phải lý do tốt để đưa một luật từ prose vào code?",
+      o: ["Luật đó đòi đánh giá ý nghĩa của một yêu cầu",
+          "Vi phạm sẽ không ai nhìn thấy từ bên ngoài",
+          "Người dùng không tự kiểm chứng được",
+          "Sai thì đắt hoặc không lấy lại được"],
+      a: 0,
+      why: "Việc đánh giá ý nghĩa thì để cho model. Chương trình đoán nghĩa thì sai cả hai chiều, và chặn nhầm khiến cả cái cổng bị tắt.",
+      trap: "Rất dễ đọc 'quan trọng' thành 'phải enforce bằng máy'. Tiêu chí không phải mức quan trọng, mà là khả năng phát hiện và chỗ chi phí lệch nhau." },
+
+    { q: "Vì sao phê duyệt của cổng gắn với một yêu cầu chứ không phải một phiên?",
+      o: ["Nếu không, một phê duyệt vô hại sẽ âm thầm bao trùm mọi lần sửa sau đó",
+          "Vì phiên có thể mở lại trên máy khác",
+          "Để giảm số file phải ghi",
+          "Vì model quên mất ngữ cảnh trước đó"],
+      a: 0,
+      why: "Duyệt cho một lỗi chính tả, rồi hai tiếng sau sửa phần thanh toán dưới cùng phê duyệt đó. Ranh giới phải khớp đơn vị người dùng thật sự nói ra.",
+      trap: "Đáp án D đổ lỗi cho model. Kể cả model nhớ hoàn hảo cũng không được mang một phê duyệt sang các yêu cầu không liên quan — đây là chuyện quyền quyết định, không phải trí nhớ." },
+
+    { q: "RelativePath::parse cho bạn thứ gì mà một hàm is_valid_path(&str) riêng lẻ không cho?",
+      o: ["Một giá trị không thể sai ở bất kỳ đâu phía sau",
+          "Thông báo lỗi đẹp hơn",
+          "Kiểm tra nhanh hơn",
+          "Bảo vệ khỏi truy cập đồng thời"],
+      a: 0,
+      why: "Chuỗi đã kiểm vẫn là chuỗi; ba lớp sau có người dùng nó mà không kiểm. Kiểu đã phân tích mang bảo đảm đi khắp nơi.",
+      trap: "Đáp án B là lợi ích có thật nhưng nhỏ, và đuổi theo nó là bỏ lỡ trọng tâm: cái được là trạng thái sai trở nên không biểu diễn được." },
+
+    { q: "Một unique index có điều kiện WHERE status IN ('proposed','accepted') mã hoá luật nào?",
+      o: ["Mỗi vấn đề chỉ có một lần xuất hiện đang mở; lần đã đóng thì lặp được",
+          "Mọi hàng phải có khoá duy nhất",
+          "Hàng ở trạng thái proposed không xoá được",
+          "Hàng accepted phải được duyệt trước khi đóng"],
+      a: 0,
+      why: "Mệnh đề WHERE chính là trọng tâm — tính duy nhất chỉ áp dụng khi hàng còn mở. Câu tiếng Anh và câu SQL là cùng một luật.",
+      trap: "Đáp án B bỏ qua mệnh đề WHERE. Một unique index đầy đủ sẽ cấm một vấn đề tái phát, ngược hẳn với thứ vòng đời cần." },
+
+    { q: "File bằng chứng của bạn không được rò rỉ bí mật. Cách nào thật sự bảo đảm điều đó?",
+      o: ["Từ chối mọi giá trị ngoài một từ vựng và tập ký tự cố định",
+          "Lọc bỏ những gì khớp mẫu bí mật đã biết",
+          "Mã hoá file khi lưu",
+          "Thêm file đó vào .gitignore"],
+      a: 0,
+      why: "Từ chối không cần lời hứa nào về tính đầy đủ. Từ vựng đóng cộng [a-z0-9-] thì ngay từ đầu đã không diễn đạt nổi một bí mật.",
+      trap: "Đáp án B là lựa chọn phổ biến và nguy hiểm: bộ lọc là tuyên bố rằng danh sách mẫu của bạn đầy đủ. Nó không bao giờ đầy đủ." },
+
+    { q: "Vì sao một lần bị chặn chỉ ghi một dòng cho mỗi yêu cầu, thay vì mỗi lần thử một dòng?",
+      o: ["Để một sự cố không đẻ ra một trăm hàng và phá hỏng các con số",
+          "Để tiết kiệm dung lượng ổ đĩa",
+          "Vì thử lại không phải thất bại thật",
+          "Vì agent chỉ nên thử lại một lần"],
+      a: 0,
+      why: "Chất lượng bằng chứng sụp đổ khi một agent bướng bỉnh thổi một sự cố thành một trăm. Con số phải giữ được nghĩa 'số sự cố'.",
+      trap: "Đáp án B đúng cơ chế nhưng sai lý do. Ổ đĩa rẻ; thứ đang được bảo vệ là ý nghĩa của con số." },
+
+    { q: "Ghi ledger thất bại vì đầy ổ đĩa. Lệnh sửa file đang chờ thì sao?",
+      o: ["Vẫn chạy — ghi nhận không bao giờ được biến thành enforcement",
+          "Bị chặn, vì bằng chứng là bắt buộc",
+          "Chỉ bị chặn nếu yêu cầu chạm một mục của cổng",
+          "Vẫn chạy nhưng cổng bị tắt cho cả phiên"],
+      a: 0,
+      why: "Ledger mô tả hệ thống chứ không cai trị nó. Để quan sát chặn được công việc là biến một sự cố theo dõi thành sự cố ngừng hoạt động.",
+      trap: "Đáp án B nghe rất chặt chẽ và ngược hoàn toàn: nó cho thành phần ít quan trọng nhất quyền dừng mọi thứ." },
+
+    { q: "Vì sao bộ sinh đề xuất cải tiến dựa trên quy tắc thay vì dùng model?",
+      o: ["Đề xuất phải tái lập được và kiểm toán được",
+          "Model chạy quá chậm cho việc này",
+          "Quy tắc sinh ra nhiều đề xuất hơn",
+          "Tránh gửi dữ liệu ra dịch vụ bên ngoài"],
+      a: 0,
+      why: "Bạn phải giải thích được vì sao một đề xuất xuất hiện, và cùng bằng chứng phải ra cùng đề xuất. Thông minh ở đây tốn khả năng truy vết mà không đổi lại gì.",
+      trap: "Đáp án D là lợi ích thật nhưng không phải lý do. Kể cả dùng model chạy hoàn toàn cục bộ, đề xuất không tái lập được vẫn vô dụng khi làm bằng chứng." },
+
+    { q: "Tính chất nào khiến harness là tự cải tiến chứ không phải tự sửa mình?",
+      o: ["Đề xuất chỉ đọc cho tới khi con người duyệt tường minh từng cái một",
+          "Nó tự viết lại luật khi bằng chứng đủ mạnh",
+          "Nó đánh phiên bản mọi thay đổi luật",
+          "Nó chạy bộ test của chính nó trước khi áp dụng"],
+      a: 0,
+      why: "Mặc định chỉ đọc, duyệt tường minh, mỗi lần một cái — để một lần duyệt hàng loạt không chôn mất đúng cái ý tưởng tồi giữa chín cái tốt.",
+      trap: "Đáp án D nghe như đã đủ an toàn. Bộ test xanh chứng minh thay đổi chạy được, không chứng minh có ai muốn nó." },
+
+    { q: "Một bản ghi quyết định bạn viết tháng trước vừa quê vừa sai ngôn ngữ. Làm gì?",
+      o: ["Để nguyên thân nó; viết bản mới thay thế nếu hướng đi đã đổi",
+          "Viết lại cho tử tế — hồ sơ thì phải chính xác",
+          "Dịch lại nhưng giữ nguyên ý nghĩa",
+          "Xoá đi và viết bản tốt hơn"],
+      a: 0,
+      why: "Nhiệm vụ duy nhất của bản ghi là để phiên sau tin được điều đã thực sự được quyết. Mọi lần sửa đều phá đúng cái đó, dù thiện chí đến mấy.",
+      trap: "Đáp án C nghe vô hại vì 'ý nghĩa vẫn thế' — nhưng chính bạn là người phán điều đó, và phiên sau không có cách nào kiểm." },
+
+    { q: "Bạn báo cáo một việc đã xong cho người không đọc được code. Đâu là bằng chứng hợp lệ?",
+      o: ["Mở trang này, bấm Submit 21 lần, lần 21 phải hiện thông báo chờ",
+          "23 test đều pass, trong đó có 4 test mới",
+          "Độ phủ tăng từ 71% lên 84%",
+          "Chỉ 3 file thay đổi, tất cả trong mô-đun thanh toán"],
+      a: 0,
+      why: "Bằng chứng phải do chính người gánh rủi ro thực hiện được. Mọi thứ khác là lời khẳng định họ phải tin trong khi nó nghe như bằng chứng.",
+      trap: "Đáp án B là lựa chọn nguy hiểm nhất trang này, chính vì nó đúng, cụ thể, và hoàn toàn không kiểm chứng được bởi người đang nghe." },
+
+    { q: "mkit dùng 790 dòng Rust và một file JSONL; repository-harness dùng 21.178 dòng và 16 bảng. Đâu là lý giải đúng nhất?",
+      o: ["Hai bên giả định người dùng khác nhau, nên chương trình sở hữu lượng việc khác nhau",
+          "mkit là bản sớm hơn, chưa hoàn thiện, của cùng một ý tưởng",
+          "JSONL không lưu được nhiều dữ liệu bằng SQLite",
+          "Số dòng Rust phản ánh trực tiếp số tính năng"],
+      a: 0,
+      why: "Một bên giả định người dùng đọc được code và vận hành được CLI; bên kia giả định họ không. Chương trình của mkit chỉ sở hữu cái cổng và ledger — phần còn lại là tài liệu người dùng đọc được.",
+      trap: "Đáp án C đúng là lỗi về kho lưu trữ mà khoá học này cảnh báo suốt: lượng dữ liệu không phải yếu tố quyết định, độ phức tạp câu hỏi mới là." },
+
+    { q: "Chương trình cổng chạy trong hook thì bình thường, chạy trong script thì treo mãi không kết thúc. Nguyên nhân hợp lý nhất?",
+      o: ["Nó đọc đầu vào chuẩn, mà trong script luồng đó mở nhưng không ai ghi",
+          "Script thiếu quyền chạy nên nó chờ cấp quyền",
+          "Nó đang chờ khoá file mà tiến trình khác giữ",
+          "Script chạy quá nhanh nên nó chưa kịp khởi tạo"],
+      a: 0,
+      why: "Dưới hook, công cụ gửi dữ liệu rồi đóng luồng nên đọc xong ngay. Trong script, luồng vào là ống đang mở mà không ai ghi, nên lệnh đọc chờ vĩnh viễn.",
+      trap: "Đáp án C là phỏng đoán quen thuộc và sai hướng: không có khoá nào ở đây. Đây là lý do lỗi này sống sót qua 29 test — test Rust mặc định đóng đầu vào của tiến trình con." }
+  ];
+
+  var REPO_QUIZ = [
+    { q: "Bạn hỏi agent “giải thích tại sao build chậm”. Trong lúc đọc, nó thấy một bug thật. Harness cho phép nó làm gì?",
+      o: ["Báo cáo bug, không sửa gì cả",
+          "Sửa luôn vì đằng nào cũng đang mở file đó",
+          "Sửa rồi ghi vào plan cho minh bạch",
+          "Sửa nếu bản vá dưới mười dòng"],
+      a: 0,
+      why: "Đây là yêu cầu read-only. docs/WORKFLOW.md nói thẳng: việc phát hiện ra thứ gì đó không tự trao quyền sửa nó. Loại việc do yêu cầu quyết định, không do thứ agent tình cờ nhìn thấy.",
+      trap: "Đáp án D nghe hợp lý vì lấy kích thước làm ranh giới. Nhưng ranh giới ở đây là quyền quyết định chứ không phải số dòng — bản vá một dòng vẫn có thể đổi hành vi mà người dùng không hề yêu cầu." },
+
+    { q: "Khi nào mới tạo file trong docs/plans/active/?",
+      o: ["Khi việc bắc qua nhiều phiên, cần phối hợp, hoặc không khôi phục được từ diff",
+          "Khi diff dự kiến vượt vài trăm dòng",
+          "Cho mọi thay đổi động vào nhiều hơn một file",
+          "Trước mọi thay đổi, để lúc nào cũng có dấu vết"],
+      a: 0,
+      why: "Plan là bộ nhớ làm việc bền, và nó chỉ đáng khi trí nhớ thật sự bị mất: qua nhiều phiên, nhiều người, có phụ thuộc, hoặc cần khôi phục. Sửa typo không cần plan.",
+      trap: "Đáp án D biến plan thành thủ tục bắt buộc. Khi mọi việc đều phải có plan thì plan thành nghi lễ, và không ai đọc cái nào nữa — đúng thứ mà nguyên tắc “quy trình theo hình dạng việc” muốn tránh." },
+
+    { q: "Yêu cầu: “thêm rate limiting”. Thư viện bạn định dùng mặc định 100 request mỗi phút. Agent phải làm gì?",
+      o: ["Dừng và hỏi hạn mức, khoá để đếm, và hợp đồng lỗi",
+          "Dùng 100/phút vì đó là mặc định của thư viện",
+          "Dùng 100/phút nhưng ghi chú là có thể chỉnh",
+          "Chọn con số thấp hơn cho an toàn"],
+      a: 0,
+      why: "Mặc định cấu hình được không phải quyền quyết định. Đây là ví dụ có sẵn trong docs/WORKFLOW.md: thiếu hạn mức, thiếu khoá để đếm, thiếu chỗ enforce, hoặc thiếu hợp đồng lỗi thì phải dừng trước khi sửa.",
+      trap: "Đáp án C hấp dẫn vì có vẻ trung thực. Nhưng một khi con số nằm trong mã nguồn thì không ai phân biệt được nó do người chọn hay máy đoán — ghi chú không cứu được điều đó." },
+
+    { q: "harness update thấy bạn và upstream cùng sửa một đoạn văn bản. Chuyện gì xảy ra?",
+      o: ["Không file nào đổi; giữ BASE, LOCAL, UPSTREAM, RESOLVED và chờ người",
+          "Bản local thắng vì đó là repo của bạn",
+          "Bản upstream thắng vì nó mới hơn",
+          "Chèn dấu xung đột vào file rồi chạy tiếp"],
+      a: 0,
+      why: "Chương trình biết hai đoạn có đè lên nhau không; nó không biết đoạn nào đúng. Nên nó làm phần biết được và dừng ở phần không biết. Không file quản lý nào và cả file thực thi đều không đổi.",
+      trap: "Đáp án D là hành vi của git merge, nên rất dễ đoán nhầm. Nhưng dấu xung đột nằm trong file nghĩa là repo đã ở trạng thái hỏng — harness từ chối chính xác điều đó, và --continue cũng từ chối nếu còn dấu xung đột." },
+
+    { q: ".harness-core/base/ dùng để làm gì?",
+      o: ["Giữ nguyên bytes upstream lúc cài, làm mốc BASE cho three-way merge",
+          "Lưu lịch sử task và tiến độ của agent",
+          "Chứa bản sao lưu các file bạn đã sửa",
+          "Cache bản phát hành để cài offline"],
+      a: 0,
+      why: "Không có BASE thì chỉ so được hai bên và mọi khác biệt đều thành xung đột. Có BASE mới phân biệt được “bạn sửa” với “upstream sửa”, nên phần không đè nhau gộp im lặng được.",
+      trap: "Đáp án B là thứ mọi người mong đợi từ một công cụ agent. Nhưng AGENTS.md nói thẳng Harness không có task database — nếu .harness-core chứa tiến độ thì nó đã thành control plane song song." },
+
+    { q: "Vì sao repo viết hẳn một test đếm đúng 5 dòng “- platform:” thay vì chỉ ghi “hỗ trợ 5 nền tảng” vào tài liệu?",
+      o: ["Vì tài liệu không chặn được merge, còn test thì chặn",
+          "Vì YAML rất dễ gõ sai thụt lề",
+          "Vì cần biết số nền tảng để tính chi phí CI",
+          "Vì GitHub Actions yêu cầu khai báo số job"],
+      a: 0,
+      why: "Đây là kỹ thuật 08 — đưa luật xuống thành ràng buộc của database. Một luật chỉ tồn tại trên giấy sẽ trôi mà không ai biết; cùng luật đó dưới dạng grep sẽ đỏ ngay lần đầu ai đó thêm hoặc bớt nền tảng.",
+      trap: "Đáp án B nói về typo, mà typo thì trình soạn thảo bắt được. Vấn đề thật là drift ngữ nghĩa: ai đó thêm một nền tảng và quên bốn chỗ đếm khác — chuyện chỉ contract test mới bắt được." },
+
+    { q: "Bạn thấy trong repo có workflow CI gọi lệnh kiểm tra. Được phép tuyên bố điều gì?",
+      o: ["Rằng CI có gọi lệnh đó — không hơn",
+          "Rằng lệnh đó đã chạy trên commit hiện tại",
+          "Rằng merge sẽ bị chặn nếu lệnh đó hỏng",
+          "Rằng branch protection đang yêu cầu lệnh đó"],
+      a: 0,
+      why: "docs/patterns/encoding-invariants.md tách bốn tầng: lệnh chạy tại chỗ, hook tuỳ chọn, CI có gọi, và branch protection. File workflow chỉ chứng minh tầng thứ ba, và chỉ ở mức “có gọi”.",
+      trap: "Đáp án C là bước nhảy mà gần như ai cũng làm. Nhưng job xanh không chứng minh nó bắt buộc — branch protection cấu hình ở ngoài repo, và không đọc được từ mã nguồn." },
+
+    { q: "$onboard-repository ở lượt chạy đầu tiên được phép làm gì?",
+      o: ["Chỉ đọc: không sửa file, không cài công cụ, không khởi động service",
+          "Sửa những chỗ rõ ràng là sai rồi báo lại",
+          "Chạy test suite để đo tình trạng thật",
+          "Tạo sẵn khung tài liệu để lượt sau điền vào"],
+      a: 0,
+      why: "Lượt đầu là quan sát. Nó đọc, dựng bản đồ vận hành, và đề xuất — người duyệt xong thì mới có lượt áp dụng. Đề xuất còn có skill riêng để người thứ hai soi lại.",
+      trap: "Đáp án C nghe vô hại vì test là read-only về mặt logic. Nhưng chạy test có thể tạo file, chiếm cổng, ghi cache, hoặc gọi ra ngoài — với một repo lạ thì đó không còn là quan sát." },
+
+    { q: "Lệnh xác thực chuẩn của repo này là gì?",
+      o: ["scripts/validate-premerge.sh",
+          "cargo test --workspace",
+          "Từng script trong tests/ chạy riêng lẻ",
+          "Đẩy PR lên rồi chờ CI"],
+      a: 0,
+      why: "Một entrypoint duy nhất gói fmt, test, clippy, contract installer, contract tài liệu, guard phát hành, cú pháp shell, và git diff --check. Luật nằm trong docs/, enforcement nằm trong tests/, và chúng chỉ gặp nhau ở đây.",
+      trap: "Đáp án B chạy được và xanh, nên rất dễ tưởng là đủ. Nhưng nó bỏ qua toàn bộ contract test — đúng những thứ bắt được drift giữa tài liệu, CI, và script." },
+
+    { q: "Thứ tự đúng khi phát hành một bản Harness core?",
+      o: ["Build và kiểm checksum trên commit chưa gắn tag, kiểm inventory, rồi mới gắn tag và publish",
+          "Gắn tag trước để mọi bước sau tham chiếu vào một mốc cố định",
+          "Publish bản nháp trước, kiểm xong thì gỡ nháp",
+          "Gắn tag và publish song song cho nhanh"],
+      a: 0,
+      why: "Chứng minh trước, gắn tag sau. Tag không sửa lại được, nên nó chỉ được tạo ra sau khi mọi bằng chứng đã xong. Contract test còn cấm --clobber, cấm git tag trần, và cấm trigger push để không ai lách được thứ tự này.",
+      trap: "Đáp án B là thói quen từ quy trình phát hành thông thường. Nhưng gắn tag trước nghĩa là một tag có thể tồn tại mà không có bằng chứng đi kèm — và nếu bản build hỏng thì bạn buộc phải sửa hoặc xoá một thứ đáng lẽ không được đụng vào." },
+
+    { q: "File SHA-256 đi kèm binary bảo đảm điều gì?",
+      o: ["Bytes khớp với bản phát hành trên GitHub — không chống được nhà phát hành bị chiếm",
+          "Binary do đúng người bảo trì repo ký",
+          "Binary không chứa mã độc",
+          "Bản tải về không bị hạ cấp"],
+      a: 0,
+      why: "docs/ARCHITECTURE.md phát biểu chính xác cả giới hạn: SHA-256 xác minh bytes tương đối với bản phát hành, nó không phải gốc tin cậy độc lập. Việc chống hạ cấp là một kiểm tra khác.",
+      trap: "Đáp án B nhầm checksum với chữ ký. Checksum và binary nằm cùng một chỗ — ai kiểm soát được chỗ đó thì thay được cả hai." },
+
+    { q: "Bạn fork repo. Cài mới thì lấy binary từ fork của bạn, nhưng harness update lại kéo về binary của repo gốc. Nguyên nhân?",
+      o: ["Hằng số nguồn phát hành trong mã Rust vẫn trỏ về repo gốc",
+          "Fork chưa có bản phát hành nào",
+          "Tag của fork chưa được đẩy lên",
+          "Bản cache cũ trong .harness-core"],
+      a: 0,
+      why: "Script cài và binary cập nhật là hai đường độc lập. Đổi script mà quên RELEASE_TAG_URL với RELEASE_DOWNLOAD_ROOT thì lần update đầu tiên sẽ lặng lẽ thay binary của bạn bằng binary upstream, cuốn theo mọi thay đổi của fork.",
+      trap: "Đáp án B và C đều dẫn tới lỗi tải rõ ràng. Lỗi thật ở đây nguy hiểm hơn vì nó thành công — bạn được một bản cập nhật hợp lệ, chỉ là từ nhầm repo." },
+
+    { q: "Skill engineering-wisdom đưa ra một lời khuyên về kiến trúc. Nó có hiệu lực gì với repo?",
+      o: ["Không có hiệu lực nào; nó là tư vấn, không phải chính sách",
+          "Nó trở thành chuẩn của repo sau khi cài",
+          "Nó cho phép agent viết lại kiến trúc theo lời khuyên đó",
+          "Nó cùng cấp với các decision trong docs/decisions/"],
+      a: 0,
+      why: "Payload này là add-on tuỳ chọn, phải khai báo mới cài, và tài liệu nói rõ lời khuyên không thiết lập được chính sách của người dùng và không cho phép viết lại kiến trúc.",
+      trap: "Đáp án B rất dễ tin vì cài rồi thì nó nằm trong repo, mà mọi thứ trong repo đều là sự thật của repo. Nhưng nó nằm trong thư mục skill, không phải trong docs/decisions/ — vị trí file chính là thứ phân biệt lời khuyên với quyền quyết định." },
+
+    { q: "Cái nào sau đây Harness KHÔNG cài vào repo của bạn?",
+      o: ["Lệnh xác thực cho ứng dụng của bạn",
+          "Một AGENTS.md ngắn làm điểm vào",
+          "Bản đồ tài liệu và cấu trúc plan / decision",
+          "Template cho runbook vận hành ứng dụng"],
+      a: 0,
+      why: "Harness cài điều hướng, cấu trúc bộ nhớ làm việc, và ranh giới quyết định. Nó không biết stack của bạn, nên bịa ra lệnh chạy hay lệnh kiểm tra sẽ là bịa ra sự thật về ứng dụng.",
+      trap: "Đáp án D dễ bị chọn vì nghe cụ thể nhất. Nhưng cái được cài là template rỗng — người dùng tự điền lệnh thật; Harness không điền hộ, và tài liệu nói rõ không được bịa lệnh, credential, hay chính sách để lấp template." },
+
+    { q: "Khi nào một thay đổi được tuyên bố là hoàn thành?",
+      o: ["Khi có bằng chứng chạy được hoặc quan sát được, hoặc blocker được nêu rõ ràng",
+          "Khi mọi mục trong plan đã được đánh dấu xong",
+          "Khi agent đã mô tả đầy đủ những gì nó làm",
+          "Khi thay đổi đã được merge vào nhánh chính"],
+      a: 0,
+      why: "Chuẩn hoàn thành trong docs/WORKFLOW.md: kết quả tồn tại hoặc blocker rõ ràng, sự thật trong repo còn đúng, bằng chứng đúng loại hành vi đã chạy hoặc khoảng trống được công bố. Mô tả không thay thế được bằng chứng quan sát.",
+      trap: "Đáp án B là bẫy tinh vi nhất vì plan là công cụ chính thống của repo. Nhưng chính tài liệu nói: plan, checklist, và lời tuyên bố hoàn thành tự chúng không chứng minh được hành vi sản phẩm." }
+  ];
+
+  var LETTERS = ['A','B','C','D'];
+
+  function mountQuiz(bank, ids, grade){
+  var quizEl = document.getElementById(ids.root);
+  var scoreEl = document.getElementById(ids.score);
+  var answered = 0, correct = 0;
+
+  function showScore(){
+    scoreEl.hidden = false;
+    var v = document.getElementById(ids.scoreValue);
+    v.textContent = correct + ' / ' + bank.length;
+    v.className = 'v ' + (correct >= grade.good ? 'good' : (correct >= grade.mid ? 'mid' : 'bad'));
+    var note = document.getElementById(ids.scoreNote);
+    if (correct >= grade.good){
+      note.textContent = grade.noteGood;
+    } else if (correct >= grade.mid){
+      note.textContent = grade.noteMid;
+    } else {
+      note.textContent = grade.noteBad;
+    }
+  }
+
+  function buildQuiz(){
+    quizEl.textContent = '';
+    answered = 0; correct = 0;
+    scoreEl.hidden = true;
+
+    bank.forEach(function(item, qi){
+      var block = document.createElement('div');
+      block.className = 'q-block';
+
+      var num = document.createElement('div');
+      num.className = 'qn';
+      num.textContent = 'CÂU ' + (qi + 1) + ' / ' + bank.length;
+      block.appendChild(num);
+
+      var text = document.createElement('div');
+      text.className = 'qt';
+      text.textContent = item.q;
+      block.appendChild(text);
+
+      item.o.forEach(function(optionText, oi){
+        var opt = document.createElement('div');
+        opt.className = 'opt';
+
+        var letter = document.createElement('span');
+        letter.className = 'letter';
+        letter.textContent = LETTERS[oi];
+        opt.appendChild(letter);
+
+        var body = document.createElement('span');
+        body.textContent = optionText;
+        opt.appendChild(body);
+
+        opt.addEventListener('click', function(){
+          if (block.className.indexOf('answered') !== -1) { return; }
+          block.className = 'q-block answered';
+          answered += 1;
+
+          var options = block.querySelectorAll('.opt');
+          options[item.a].classList.add('right');
+          var hit = (oi === item.a);
+          if (hit) { correct += 1; } else { opt.classList.add('wrong'); }
+
+          var verdict = document.createElement('div');
+          verdict.className = 'verdict ' + (hit ? 'ok' : 'no');
+
+          var head = document.createElement('b');
+          head.textContent = hit ? '✓ Đúng' : '✗ Không phải — đáp án là ' + LETTERS[item.a];
+          verdict.appendChild(head);
+
+          var why = document.createElement('div');
+          why.textContent = item.why;
+          verdict.appendChild(why);
+
+          var trap = document.createElement('div');
+          trap.className = 'trap';
+          trap.textContent = 'Vì sao cái bẫy hấp dẫn lại sai: ' + item.trap;
+          verdict.appendChild(trap);
+
+          block.appendChild(verdict);
+          if (answered === bank.length) { showScore(); }
+        });
+
+        block.appendChild(opt);
+      });
+
+      quizEl.appendChild(block);
+    });
+  }
+
+  document.getElementById(ids.reset).addEventListener('click', function(){
+    buildQuiz();
+    window.scrollTo(0, 0);
+  });
+  buildQuiz();
+  }
+
+  mountQuiz(QUIZ,
+    { root:'quiz', score:'score', scoreValue:'score-v', scoreNote:'score-note', reset:'quiz-reset' },
+    { good:14, mid:10,
+      noteGood:'Bạn đã có mô hình tư duy, không chỉ có từ vựng. Bước tiếp theo hữu ích nhất là tự dựng một cái rồi tự dùng nó — bốn lỗi ở bài 5.4 đều ra đời từ đó.',
+      noteMid:'Cơ chế thì nắm rồi, lý do đằng sau thì chưa. Đọc lại Mô-đun 02: phần lớn câu sai đều bắt nguồn từ việc chọn bậc theo mức quan trọng thay vì theo khả năng phát hiện.',
+      noteBad:'Quay lại Mô-đun 01. Gần như mọi đáp án sai ở đây đều đúng trong một thế giới mà người dùng tự kiểm chứng được công việc. Cả khoá học này nói về thế giới họ không kiểm được.' });
+
+  mountQuiz(REPO_QUIZ,
+    { root:'quiz-repo', score:'score-repo', scoreValue:'score-repo-v', scoreNote:'score-repo-note', reset:'quiz-repo-reset' },
+    { good:13, mid:9,
+      noteGood:'Bạn dùng được repo này mà không cần ai canh. Điều đáng làm tiếp là mở docs/patterns/encoding-invariants.md và thử mã hoá một luật thật của bạn thành check chạy được.',
+      noteMid:'Cơ chế thì đúng, ranh giới thì chưa chắc. Đọc lại bài 6.1 và 6.4: gần như mọi câu sai đều là chỗ Harness cố tình dừng lại mà bạn tưởng nó sẽ tự quyết.',
+      noteBad:'Đọc lại Mô-đun 06 từ đầu. Phần lớn đáp án sai ở đây đều đúng với một công cụ có task database — mà đó chính là thứ repo này từ chối trở thành.' });
+})();
+</script>
+<script>
+(() => {
+  const shell = document.getElementById('appShell')
+  const sidebar = document.getElementById('sidebar')
+  const toggle = document.getElementById('navToggle')
+  const close = document.getElementById('navClose')
+  const scrim = document.getElementById('navScrim')
+  const mobile = window.matchMedia('(max-width: 900px)')
+  if (!shell || !sidebar || !toggle || !close || !scrim) return
+
+  const isOpen = () => mobile.matches ? shell.classList.contains('nav-open') : !shell.classList.contains('nav-collapsed')
+  const setOpen = open => {
+    shell.classList.toggle('nav-open', open && mobile.matches)
+    shell.classList.toggle('nav-collapsed', !open && !mobile.matches)
+    toggle.setAttribute('aria-expanded', String(open))
+    sidebar.setAttribute('aria-hidden', String(!open))
+    sidebar.inert = !open
+    scrim.hidden = !open || !mobile.matches
+    document.body.classList.toggle('nav-lock', open && mobile.matches)
+  }
+
+  toggle.addEventListener('click', () => setOpen(!isOpen()))
+  close.addEventListener('click', () => setOpen(false))
+  scrim.addEventListener('click', () => setOpen(false))
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && isOpen()) setOpen(false)
+  })
+  mobile.addEventListener('change', () => setOpen(!mobile.matches))
+  sidebar.querySelectorAll('.nav-item,.nav-child').forEach(item => {
+    item.addEventListener('click', () => {
+      if (mobile.matches) setOpen(false)
+    })
+  })
+  sidebar.querySelectorAll('[data-nav-group-toggle]').forEach(button => {
+    button.addEventListener('click', () => {
+      const group = button.closest('.nav-group')
+      if (!group) return
+      const open = group.classList.toggle('open')
+      button.setAttribute('aria-expanded', String(open))
+      const arrow = button.querySelector('.nav-arrow')
+      if (arrow) arrow.textContent = open ? '▾' : '▸'
+    })
+  })
+  setOpen(!mobile.matches)
+})()
+</script>
+</body>
+</html>
